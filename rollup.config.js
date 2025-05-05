@@ -34,11 +34,7 @@ export default {
     commonjs({
       transformMixedEsModules: true,
       include: /node_modules/,
-      requireReturnsDefault: 'auto',
-      namedExports: {
-        'react': ['createElement', 'useState', 'useEffect', 'useCallback', 'useRef', 'useMemo'],
-        'react-dom': ['createRoot', 'render']
-      }
+      requireReturnsDefault: 'auto'
     }),
     json(),
     copy({
