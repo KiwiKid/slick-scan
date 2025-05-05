@@ -28,10 +28,16 @@ jobs:
       - name: Build
         run: npm run build
         
+      - name: Debug build output
+        run: |
+          ls -la dist
+          ls -la demo
+        
       - name: Prepare deployment
         run: |
           mkdir -p dist/demo
-          cp demo/index.html dist/demo/
+          cp -r demo/* dist/demo/ || true
+          ls -la dist/demo
         
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
