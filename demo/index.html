@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slick Scan Demo</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.2/css/all.min.css">
+    <style>
+        body {
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .demo-container {
+            margin: 2rem 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">Slick Scan Demo</h1>
+        <div class="content">
+            <p>This is a demo of the Slick Scan web component. It allows you to:</p>
+            <ul>
+                <li>Upload images for OCR processing</li>
+                <li>Use your device's camera to capture images</li>
+                <li>View OCR results in real-time</li>
+            </ul>
+        </div>
+
+        <div class="demo-container">
+            <slick-scan></slick-scan>
+        </div>
+
+        <div class="content">
+            <h2 class="subtitle">How to Use</h2>
+            <p>To use Slick Scan in your own project:</p>
+            <pre><code>&lt;script type="module" src="https://[your-username].github.io/[repo-name]/index.js"&gt;&lt;/script&gt;
+&lt;slick-scan&gt;&lt;/slick-scan&gt;</code></pre>
+        </div>
+    </div>
+
+    <script type="module" src="../dist/index.js"></script>
+</body>
+</html> 

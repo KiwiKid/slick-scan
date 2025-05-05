@@ -1,0 +1,2 @@
+- Use npm, node_modules and rollup to mange and bundle dependencies - not global references
+- Use existing @types references, dont shim type libraries
