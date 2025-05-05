@@ -35,9 +35,8 @@ jobs:
         
       - name: Prepare deployment
         run: |
-          mkdir -p dist/demo
-          cp -r demo/* dist/demo/ || true
-          ls -la dist/demo
+          cp -r demo/* dist/ || true
+          ls -la dist
         
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
