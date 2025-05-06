@@ -35,8 +35,8 @@ jobs:
           
           # Copy all necessary files
           cp dist/demo.js docs/
-          cp docs/index.html docs/  # Ensure index.html exists
-          cp styles.css docs/
+          cp static/index.html docs/  # Ensure index.html exists
+          cp static/styles.css docs/
           cp node_modules/bulma/css/bulma.min.css docs/
         
       - name: Deploy to GitHub Pages
