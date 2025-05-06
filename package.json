@@ -3,16 +3,16 @@
   "version": "0.1.0",
   "description": "A web component for scanning and OCR",
   "type": "module",
-  "main": "dist/index.js",
-  "module": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "docs/index.js",
+  "module": "docs/index.js",
+  "types": "docs/index.d.ts",
   "files": [
-    "dist"
+    "docs"
   ],
   "scripts": {
     "build": "rollup -c",
     "dev": "rollup -c -w",
-    "start": "npm run build && serve dist"
+    "start": "npm run build && serve docs"
   },
   "keywords": [
     "webcomponent",
@@ -22,14 +22,20 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "tesseract.js": "^5.0.4"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^25.0.7",
+    "@rollup/plugin-json": "^6.1.0",
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-terser": "^0.4.4",
     "@rollup/plugin-typescript": "^11.1.6",
+    "@types/react": "^18.2.55",
+    "@types/react-dom": "^18.2.19",
     "rollup": "^4.9.6",
+    "rollup-plugin-copy": "^3.4.0",
     "rollup-plugin-postcss": "^4.0.2",
     "serve": "^14.2.4",
     "typescript": "^5.3.3"
