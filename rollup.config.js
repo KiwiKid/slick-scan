@@ -5,6 +5,7 @@ import terser from '@rollup/plugin-terser';
 import postcss from 'rollup-plugin-postcss';
 import copy from 'rollup-plugin-copy';
 import json from '@rollup/plugin-json';
+import replace from '@rollup/plugin-replace';
 
 export default {
   input: 'src/index.tsx',
@@ -14,6 +15,15 @@ export default {
     sourcemap: true
   },
   plugins: [
+    replace({
+      preventAssignment: true,
+      values: {
+        'process.env.NODE_ENV': JSON.stringify('production'),
+        'process.env': JSON.stringify({
+          NODE_ENV: 'production'
+        })
+      }
+    }),
     typescript({
       tsconfig: './tsconfig.json',
       sourceMap: true,
