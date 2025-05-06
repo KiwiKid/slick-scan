@@ -221,7 +221,7 @@ slick-scan {
 }
 
 .card-guide::before {
-    content: 'Position card here';
+    content: 'Position card here 3';
     position: absolute;
     top: -40px;
     left: 50%;
