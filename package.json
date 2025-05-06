@@ -4,7 +4,7 @@
   "description": "A web component for scanning and OCR",
   "type": "module",
   "main": "dist/index.js",
-  "module": "dist/index.esm.js",
+  "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
     "dist"
@@ -12,8 +12,7 @@
   "scripts": {
     "build": "rollup -c",
     "dev": "rollup -c -w",
-    "start": "npm run build && serve .",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "npm run build && serve dist"
   },
   "keywords": [
     "webcomponent",
@@ -27,20 +26,11 @@
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^25.0.7",
-    "@rollup/plugin-json": "^6.1.0",
     "@rollup/plugin-node-resolve": "^15.2.3",
-    "@rollup/plugin-replace": "^5.0.2",
     "@rollup/plugin-terser": "^0.4.4",
     "@rollup/plugin-typescript": "^11.1.6",
-    "@types/react": "^18.2.55",
-    "@types/react-dom": "^18.2.19",
-    "bulma": "^0.9.4",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
     "rollup": "^4.9.6",
-    "rollup-plugin-copy": "^3.4.0",
     "rollup-plugin-postcss": "^4.0.2",
-    "sass": "^1.87.0",
     "serve": "^14.2.4",
     "typescript": "^5.3.3"
   }
