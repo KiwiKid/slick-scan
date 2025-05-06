@@ -1,4 +1,8 @@
 /* styles.css - static USED!! 05/07/2025 */
+body {
+    background-color: black;
+}
+
 slick-scan {
     display: block;
     margin: 2rem auto;

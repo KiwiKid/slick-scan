@@ -671,6 +671,30 @@ const App = (): JSX.Element => {
 
     return (
         <div className="box">
+            
+            {isCameraActive && (
+                <div className="camera-container">
+                    <video
+                        ref={(el: HTMLVideoElement | null) => {
+                            if (el) {
+                                (videoRef as React.MutableRefObject<HTMLVideoElement | null>).current = el;
+                            }
+                        }}
+                        autoPlay
+                        playsInline
+                        muted
+                    />
+                    <div className="camera-overlay">
+                        <div className="card-guide" />
+                    </div>
+                    <button
+                        className="button is-primary is-large camera-button"
+                        onClick={takePhoto}
+                    >
+                        Take Photo
+                    </button>
+                </div>
+            )}
             <div className="field">
                 <div className="buttons is-centered">
                     <div className="file is-boxed">
@@ -728,29 +752,6 @@ const App = (): JSX.Element => {
                     Clear Scans
                 </button>
             </div>
-            {isCameraActive && (
-                <div className="camera-container">
-                    <video
-                        ref={(el: HTMLVideoElement | null) => {
-                            if (el) {
-                                (videoRef as React.MutableRefObject<HTMLVideoElement | null>).current = el;
-                            }
-                        }}
-                        autoPlay
-                        playsInline
-                        muted
-                    />
-                    <div className="camera-overlay">
-                        <div className="card-guide" />
-                    </div>
-                    <button
-                        className="button is-primary is-large camera-button"
-                        onClick={takePhoto}
-                    >
-                        Take Photo
-                    </button>
-                </div>
-            )}
             <PhotoList photos={photos} />
             <div className="notification-container">
                 {notifications.map(({ id, message, type }) => (
