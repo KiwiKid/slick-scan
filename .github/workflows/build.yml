@@ -34,7 +34,7 @@ jobs:
           rm -rf docs/*
           
           # Copy all necessary files
-          cp dist/demo.js docs/
+          cp docs/dist/index.js docs/demo.js
           cp static/index.html docs/
           cp static/styles.css docs/
           cp static/bulma.min.css docs/
