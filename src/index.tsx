@@ -85,14 +85,14 @@ type LicenceFields = {
   other: string[];
 };
 
-function extractFields(text: string): LicenceFields {
+export function extractFields(text: string): LicenceFields {
   const idMatch = text.match(/\b\d{6,8}\b/);
-  const nameMatch = text.match(/NAME\s*([A-Za-z .-]+)/i);
-  const dorMatch = text.match(/DOR\s*([0-9\/]+)/i);
-  const issueMatch = text.match(/ISSUE\s*([0-9\/]+)/i);
-  const validMatch = text.match(/VALID\s*([0-9\/\- ]+)/i);
-  const spouseMatch = text.match(/SPOUSE\/PARTNER\s*([A-Za-z .-]+)/i);
-  const otherMatch = text.match(/OTHER\s*([\s\S]+?)(?:\n\s*Licence|$)/i);
+  const nameMatch = text.match(/NAME[\s:]+([A-Za-z .-]+)(?:\n|$)/i);
+  const dorMatch = text.match(/DOR[\s:]+([0-9\/]+)(?:\n|$)/i);
+  const issueMatch = text.match(/ISSUE[\s:]+([0-9\/]+)(?:\n|$)/i);
+  const validMatch = text.match(/VALID[\s:]+([0-9\/\- ]+)(?:\n|$)/i);
+  const spouseMatch = text.match(/SPOUSE\/PARTNER[\s:]+([A-Za-z .-]+)(?:\n|$)/i);
+  const otherMatch = text.match(/OTHER[\s:]*\n([\s\S]+?)(?:\n\s*Licence|$)/i);
 
   return {
     type: 'family_season_licence',
@@ -224,7 +224,7 @@ const App = (): JSX.Element => {
             try {
                 await worker.setParameters({
                     tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789/:-.,@ ',
-                    tessedit_pageseg_mode: PSM.SINGLE_COLUMN,
+                    tessedit_pageseg_mode: PSM.SINGLE_BLOCK,
                     preserve_interword_spaces: '1',
                 });
                 const result = await worker.recognize(photo.data);
