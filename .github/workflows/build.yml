@@ -30,12 +30,14 @@ jobs:
         
       - name: Prepare deployment
         run: |
-          mkdir -p docs
+          # Clean docs directory
+          rm -rf docs/*
+          
+          # Copy all necessary files
           cp dist/demo.js docs/
-          cp docs/index.html docs/  # Copy from docs to docs to ensure it exists
-          cp static/bulma.min.css docs/
-          cp static/styles.css docs/
-          cp static/demo.css docs/
+          cp docs/index.html docs/  # Ensure index.html exists
+          cp styles.css docs/
+          cp node_modules/bulma/css/bulma.min.css docs/
         
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
