@@ -83,6 +83,7 @@ type LicenceFields = {
   valid: string;
   spousePartner: string;
   other: string[];
+  createdAt: number;
 };
 
 export function extractFields(text: string): LicenceFields {
@@ -92,7 +93,7 @@ export function extractFields(text: string): LicenceFields {
   const issueMatch = text.match(/ISSUE[\s:]+([0-9\/]+)(?:\n|$)/i);
   const validMatch = text.match(/VALID[\s:]+([0-9\/\- ]+)(?:\n|$)/i);
   const spouseMatch = text.match(/SPOUSE\/PARTNER[\s:]+([A-Za-z .-]+)(?:\n|$)/i);
-  const otherMatch = text.match(/OTHER[\s:]*\n([\s\S]+?)(?:\n\s*Licence|$)/i);
+  const otherMatch = text.match(/OTHER[\s]*\n([\s\S]+?)(?:\n\s*Licence|$)/i);
 
   return {
     type: 'family_season_licence',
@@ -108,6 +109,120 @@ export function extractFields(text: string): LicenceFields {
           .map(line => line.trim())
           .filter(Boolean)
       : [],
+    createdAt: Date.now(),
+  };
+}
+
+interface FieldMatch {
+  value: string;
+  confidence: number;
+  line: number;
+  pattern: string;
+}
+
+interface FieldMatches {
+  id: FieldMatch[];
+  name: FieldMatch[];
+  dor: FieldMatch[];
+  issue: FieldMatch[];
+  valid: FieldMatch[];
+  spousePartner: FieldMatch[];
+  other: FieldMatch[];
+}
+
+export function extractFieldsV2(text: string): { fields: LicenceFields; matches: FieldMatches } {
+  const lines = text.split('\n');
+  const matches: FieldMatches = {
+    id: [],
+    name: [],
+    dor: [],
+    issue: [],
+    valid: [],
+    spousePartner: [],
+    other: []
+  };
+
+  // Define patterns for each field with their confidence scores
+  const patterns: Array<{
+    field: keyof FieldMatches;
+    pattern: RegExp;
+    confidence: number;
+  }> = [
+    { field: 'id', pattern: /\b\d{6,8}\b/g, confidence: 1.0 },
+    { field: 'name', pattern: /NAME[\s:]+([A-Za-z .-]+)(?:\n|$)/i, confidence: 0.9 },
+    { field: 'dor', pattern: /DOR[\s:]+([0-9\/]+)(?:\n|$)/i, confidence: 0.9 },
+    { field: 'issue', pattern: /ISSUE[\s:]+([0-9\/]+)(?:\n|$)/i, confidence: 0.9 },
+    { field: 'valid', pattern: /VALID[\s:]+([0-9\/\- ]+)(?:\n|$)/i, confidence: 0.9 },
+    { field: 'spousePartner', pattern: /SPOUSE\/PARTNER[\s:]+([A-Za-z .-]+)(?:\n|$)/i, confidence: 0.8 },
+    { field: 'other', pattern: /OTHER[\s]*\n([\s\S]+?)(?:\n\s*Licence|$)/i, confidence: 0.7 }
+  ];
+
+  // First pass: Find all potential matches
+  lines.forEach((line, lineNum) => {
+    patterns.forEach(({ field, pattern, confidence }) => {
+      if (field === 'id') {
+        const idMatches = line.match(pattern);
+        if (idMatches) {
+          idMatches.forEach(match => {
+            matches[field as keyof FieldMatches].push({
+              value: match,
+              confidence,
+              line: lineNum,
+              pattern: pattern.toString()
+            });
+          });
+        }
+      } else {
+        const match = line.match(pattern);
+        if (match) {
+          matches[field as keyof FieldMatches].push({
+            value: match[1]?.trim() ?? match[0],
+            confidence,
+            line: lineNum,
+            pattern: pattern.toString()
+          });
+        }
+      }
+    });
+  });
+
+  // Second pass: Look for contextual matches
+  // For example, if we find a date near a "DOR" label, increase its confidence
+  lines.forEach((line, lineNum) => {
+    if (line.includes('DOR') && !matches.dor.some(m => m.line === lineNum)) {
+      const dateMatch = line.match(/\d{1,2}\/\d{1,2}\/\d{2,4}/);
+      if (dateMatch) {
+        matches.dor.push({
+          value: dateMatch[0],
+          confidence: 0.7,
+          line: lineNum,
+          pattern: 'contextual'
+        });
+      }
+    }
+  });
+
+  // Select the best matches based on confidence and position
+  const bestMatches = {
+    id: matches.id.sort((a, b) => b.confidence - a.confidence)[0]?.value ?? '',
+    name: matches.name.sort((a, b) => b.confidence - a.confidence)[0]?.value ?? '',
+    dor: matches.dor.sort((a, b) => b.confidence - a.confidence)[0]?.value ?? '',
+    issue: matches.issue.sort((a, b) => b.confidence - a.confidence)[0]?.value ?? '',
+    valid: matches.valid.sort((a, b) => b.confidence - a.confidence)[0]?.value ?? '',
+    spousePartner: matches.spousePartner.sort((a, b) => b.confidence - a.confidence)[0]?.value ?? '',
+    other: matches.other
+      .sort((a, b) => b.confidence - a.confidence)
+      .map(m => m.value)
+      .filter(Boolean)
+  };
+
+  return {
+    fields: {
+      type: 'family_season_licence',
+      ...bestMatches,
+      createdAt: Date.now()
+    },
+    matches
   };
 }
 
@@ -116,6 +231,7 @@ interface Scan {
     image: string;
     ocrText: string;
     fields: LicenceFields;
+    matches: FieldMatches;
     createdAt: number;
   }
 
@@ -135,22 +251,175 @@ const copyCSV = (scans: Scan[]) => {
   navigator.clipboard.writeText(csv);
 };
 
+interface DailyScans {
+  [date: string]: {
+    scans: Scan[];
+  };
+}
+
+function validateDailyScans(data: unknown): data is DailyScans {
+  if (!data || typeof data !== 'object') return false;
+  
+  return Object.entries(data).every(([date, dayData]) => {
+    // Validate date format (YYYY-MM-DD)
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return false;
+    
+    // Validate day data structure
+    if (!dayData || typeof dayData !== 'object') return false;
+    if (!('scans' in dayData) || !Array.isArray(dayData.scans)) return false;
+    
+    // Validate each scan in the array
+    return dayData.scans.every((scan: unknown) => {
+      return (
+        scan &&
+        typeof scan === 'object' &&
+        'id' in scan &&
+        'image' in scan &&
+        'ocrText' in scan &&
+        'fields' in scan &&
+        'createdAt' in scan &&
+        typeof scan.createdAt === 'number'
+      );
+    });
+  });
+}
+
 function useScans() {
   const [scans, setScans] = React.useState<Scan[]>(() => {
-    const raw = localStorage.getItem('scans');
-    return raw ? JSON.parse(raw) : [];
+    try {
+      console.log('Initializing scans from localStorage...');
+      const raw = localStorage.getItem('scanData');
+      console.log('Raw data from localStorage:', raw ? 'Data exists' : 'No data found');
+      
+      if (!raw) {
+        console.log('No scan data found in localStorage, initializing empty array');
+        return [];
+      }
+      
+      console.log('Parsing scan data...');
+      const parsed = JSON.parse(raw);
+      console.log('Parsed data structure:', {
+        isObject: typeof parsed === 'object',
+        keys: Object.keys(parsed),
+        sampleDate: Object.keys(parsed)[0],
+        sampleScans: parsed[Object.keys(parsed)[0]]?.scans?.length
+      });
+      
+      if (!validateDailyScans(parsed)) {
+        console.error('Invalid scan data structure:', {
+          data: parsed,
+          validationFailed: true
+        });
+        localStorage.removeItem('scanData');
+        return [];
+      }
+      
+      const dailyScans: DailyScans = parsed;
+      console.log('Processing daily scans...');
+      const flattenedScans = Object.values(dailyScans)
+        .flatMap(day => day.scans)
+        .sort((a, b) => b.createdAt - a.createdAt)
+        .slice(0, 20);
+      
+      console.log('Scans loaded successfully:', {
+        totalDays: Object.keys(dailyScans).length,
+        totalScans: flattenedScans.length,
+        dateRange: {
+          oldest: new Date(flattenedScans[flattenedScans.length - 1]?.createdAt).toISOString(),
+          newest: new Date(flattenedScans[0]?.createdAt).toISOString()
+        }
+      });
+      
+      return flattenedScans;
+    } catch (error) {
+      console.error('Error loading scans from localStorage:', {
+        error,
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
+        errorStack: error instanceof Error ? error.stack : undefined
+      });
+      return [];
+    }
   });
 
   React.useEffect(() => {
-    localStorage.setItem('scans', JSON.stringify(scans));
+    try {
+      console.log('Saving scans to localStorage...', {
+        scanCount: scans.length,
+        dates: scans.map(s => new Date(s.createdAt).toISOString().split('T')[0])
+      });
+
+      // Group scans by date
+      const dailyScans: DailyScans = scans.reduce((acc, scan) => {
+        const date = new Date(scan.createdAt).toISOString().split('T')[0];
+        if (!acc[date]) {
+          acc[date] = { scans: [] };
+        }
+        acc[date].scans.push(scan);
+        return acc;
+      }, {} as DailyScans);
+
+      console.log('Grouped scans by date:', {
+        dates: Object.keys(dailyScans),
+        scansPerDate: Object.entries(dailyScans).map(([date, data]) => ({
+          date,
+          count: data.scans.length
+        }))
+      });
+
+      const serialized = JSON.stringify(dailyScans);
+      console.log('Serialized data size:', serialized.length);
+      localStorage.setItem('scanData', serialized);
+      console.log('Scans saved successfully');
+    } catch (error) {
+      console.error('Error saving scans to localStorage:', {
+        error,
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
+        errorStack: error instanceof Error ? error.stack : undefined,
+        scans: scans
+      });
+    }
   }, [scans]);
 
   const addScan = React.useCallback((scan: Scan) => {
+    console.log('Adding new scan:', {
+      id: scan.id,
+      createdAt: new Date(scan.createdAt).toISOString(),
+      fields: scan.fields
+    });
     setScans(prev => [scan, ...prev].slice(0, 20));
   }, []);
 
-  return { scans, addScan };
+  const clearScans = React.useCallback(() => {
+    console.log('Clearing all scans');
+    setScans([]);
+    localStorage.removeItem('scanData');
+  }, []);
+
+  return { scans, addScan, clearScans };
 }
+
+const SCAN_MODES = [{
+    id: 'auto',
+    name: 'Auto Mode',
+    description: 'Best for detecting titles and values',
+    tesseractConfig: {
+        tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789/:-.,@ ',
+        tessedit_pageseg_mode: PSM.AUTO,
+        preserve_interword_spaces: '1',
+        textord_min_linesize: '2.5',  // Helps detect smaller text
+        textord_max_linesize: '3.5',  // Helps with larger text
+    },
+},
+{
+    id: 'single_block',
+    name: '(legacy) Single Block',
+    description: 'Single block of text',
+    tesseractConfig: {
+        tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789/:-.,@ ',
+        tessedit_pageseg_mode: PSM.SINGLE_BLOCK,
+        preserve_interword_spaces: '1',
+    },
+}];
 
 const App = (): JSX.Element => {
     const [photos, setPhotos] = useState<PhotoItem[]>([]);
@@ -161,7 +430,8 @@ const App = (): JSX.Element => {
     const videoRef = useRef<HTMLVideoElement | null>(null);
     const streamRef = useRef<MediaStream | null>(null);
     const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
-    const { scans, addScan } = useScans();
+    const { scans, addScan, clearScans } = useScans();
+    const [selectedScanMode, setSelectedScanMode] = useState<string>(SCAN_MODES[0].id);
 
     const MAX_STORAGE_ITEMS = 20;
     const MAX_IMAGE_SIZE = 1024 * 1024;
@@ -209,6 +479,40 @@ const App = (): JSX.Element => {
         });
     }, []);
 
+    const processImage = useCallback(async (photo: PhotoItem): Promise<void> => {
+        if (!worker) return;
+
+        try {
+            const selectedMode = SCAN_MODES.find(mode => mode.id === selectedScanMode);
+            if (!selectedMode) {
+                throw new Error('Invalid scan mode selected');
+            }
+
+            await worker.setParameters(selectedMode.tesseractConfig);
+            const result = await worker.recognize(photo.data);
+            console.log('Tesseract Result:', result.data.text);
+            setPhotos(prev => prev.map(p =>
+                p.id === photo.id ? { ...p, status: 'completed' as const, text: result.data.text } : p
+            ));
+            // Extract fields and save scan
+            const { fields, matches } = extractFieldsV2(result.data.text);
+            addScan({
+                id: photo.id,
+                image: photo.data,
+                ocrText: result.data.text,
+                fields,
+                matches,
+                createdAt: Date.now(),
+            });
+            showNotification('Image processed successfully', 'success');
+        } catch (error) {
+            setPhotos(prev => prev.map(p =>
+                p.id === photo.id ? { ...p, status: 'error' as const } : p
+            ));
+            showNotification('Failed to process image', 'danger');
+        }
+    }, [worker, addScan, showNotification, selectedScanMode]);
+
     const processQueue = useCallback(async () => {
         if (isProcessing || photos.length === 0 || !worker) return;
 
@@ -220,37 +524,11 @@ const App = (): JSX.Element => {
                 p.id === photo.id ? { ...p, status: 'processing' as const } : p
             );
             setPhotos(updatedPhotos);
-
-            try {
-                await worker.setParameters({
-                    tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789/:-.,@ ',
-                    tessedit_pageseg_mode: PSM.SINGLE_BLOCK,
-                    preserve_interword_spaces: '1',
-                });
-                const result = await worker.recognize(photo.data);
-                setPhotos(prev => prev.map(p =>
-                    p.id === photo.id ? { ...p, status: 'completed' as const, text: result.data.text } : p
-                ));
-                // Extract fields and save scan
-                const fields = extractFields(result.data.text);
-                addScan({
-                  id: photo.id,
-                  image: photo.data,
-                  ocrText: result.data.text,
-                  fields,
-                  createdAt: Date.now(),
-                });
-                showNotification('Image processed successfully', 'success');
-            } catch (error) {
-                setPhotos(prev => prev.map(p =>
-                    p.id === photo.id ? { ...p, status: 'error' as const } : p
-                ));
-                showNotification('Failed to process image', 'danger');
-            }
+            await processImage(photo);
         }
 
         setIsProcessing(false);
-    }, [isProcessing, photos, worker, showNotification, addScan]);
+    }, [isProcessing, photos, worker, processImage]);
 
     const handleFileUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(event.target.files || []);
@@ -437,6 +715,18 @@ const App = (): JSX.Element => {
                 >
                     Copy CSV ({scans.length})
                 </button>
+                <button
+                    className="button is-danger"
+                    onClick={() => {
+                        const result = confirm('Are you sure you want to clear all scans?');
+                        if (result) {
+                            clearScans();
+                            showNotification('Cleared all scans', 'success');
+                        }
+                    }}
+                >
+                    Clear Scans
+                </button>
             </div>
             {isCameraActive && (
                 <div className="camera-container">
@@ -477,32 +767,50 @@ const App = (): JSX.Element => {
                 <table className="table is-striped is-fullwidth is-hoverable">
                     <thead>
                         <tr>
-                            <th>ID</th>
-                            <th>Name</th>
-                            <th>DOR</th>
-                            <th>Issue</th>
-                            <th>Valid</th>
-                            <th>Spouse/Partner</th>
-                            <th>Other</th>
-                            <th>Created</th>
+                            <th>Created At</th>
+                            <th>Fields</th>
+                            <th>OCR Text</th>
                         </tr>
                     </thead>
                     <tbody>
                         {scans.map(scan => (
                             <tr key={scan.id}>
-                                <td>{scan.fields.id}</td>
-                                <td>{scan.fields.name}</td>
-                                <td>{scan.fields.dor}</td>
-                                <td>{scan.fields.issue}</td>
-                                <td>{scan.fields.valid}</td>
-                                <td>{scan.fields.spousePartner}</td>
-                                <td>{scan.fields.other.join('; ')}</td>
-                                <td>{new Date(scan.createdAt).toLocaleString()}</td>
-                            </tr>
+                                <td><a style={{width: '5rem', height: '3rem'}} href={scan.image} target="_blank" rel="noopener noreferrer"><img src={scan.image} alt="Scanned" /></a></td>
+                                <td>{new Date(scan.createdAt).toLocaleString()}
+                                    <ul>
+                                <li>ID:{scan.fields.id}</li>
+                                <li>NAME:{scan.fields.name}</li>
+                                <li>DOR:{scan.fields.dor}</li>
+                                <li>ISSUE:{scan.fields.issue}</li>
+                                <li>VALID:{scan.fields.valid}</li>
+                                <li>SPOUSE/PARTNER:{scan.fields.spousePartner}</li>
+                                <li>OTHER:{scan.fields.other.join('; ')}</li>
+                                
+                                </ul>
+                                </td>
+                                <td><details><summary>OCR Text</summary>{scan.ocrText}</details></td>                            </tr>
                         ))}
                     </tbody>
                 </table>
             </div>
+
+            <div className="field">
+                    <label className="label">Scan Mode</label>
+                    <div className="control">
+                        <div className="select is-fullwidth">
+                            <select 
+                                value={selectedScanMode}
+                                onChange={(e) => setSelectedScanMode(e.target.value)}
+                            >
+                                {SCAN_MODES.map(mode => (
+                                    <option key={mode.id} value={mode.id}>
+                                        {mode.name} - {mode.description}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+                </div>
         </div>
     );
 };
