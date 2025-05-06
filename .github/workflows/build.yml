@@ -32,7 +32,10 @@ jobs:
         run: |
           mkdir -p demo
           cp dist/demo.js demo/
-          cp dist/index.html demo/
+          cp static/index.html demo/
+          cp static/bulma.min.css demo/
+          cp static/styles.css demo/
+          cp static/demo.css demo/
         
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
