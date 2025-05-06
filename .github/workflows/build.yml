@@ -31,17 +31,16 @@ jobs:
       - name: Prepare deployment
         run: |
           mkdir -p demo
-          cp dist/demo.js demo/
-          cp static/index.html demo/
-          cp static/bulma.min.css demo/
-          cp static/styles.css demo/
-          cp static/demo.css demo/
+          cp dist/demo.js docs/
+          cp static/index.html docs/
+          cp static/bulma.min.css docs/
+          cp static/styles.css docs/
+          cp static/demo.css docs/
         
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./demo
           publish_branch: gh-pages
           commit_message: "Deploy to GitHub Pages"
           force_orphan: true
