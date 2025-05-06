@@ -34,11 +34,11 @@ jobs:
           rm -rf docs/*
           
           # Copy all necessary files
-          cp docs/dist/index.js docs/demo.js
-          cp static/index.html docs/
-          cp static/styles.css docs/
-          cp static/bulma.min.css docs/
-          cp static/demo.css docs/
+          cp dist/demo.js docs/
+          cp dist/index.html docs/
+          cp dist/styles.css docs/
+          cp dist/bulma.min.css docs/
+          cp dist/demo.css docs/
         
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
