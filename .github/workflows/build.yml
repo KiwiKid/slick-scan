@@ -25,16 +25,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
         
-      - name: Create dist directory
-        run: mkdir -p dist
-        
       - name: Build
         run: npm run build
-        
-      - name: Prepare deployment
-        run: |
-          cp static/index.html dist/
-          sed -i 's|src="/|src="|g' dist/index.html
         
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
@@ -42,6 +34,8 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./dist
           publish_branch: gh-pages
+          commit_message: "Deploy to GitHub Pages"
+          force_orphan: true
 
  # publish:
  #   needs: build

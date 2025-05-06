@@ -363,12 +363,12 @@ class SlickScan extends HTMLElement {
     connectedCallback() {
         const styles = document.createElement('link');
         styles.rel = 'stylesheet';
-        styles.href = 'dist/bulma.min.css';
+        styles.href = 'bulma.min.css';
         this.shadow.appendChild(styles);
 
         const customStyles = document.createElement('link');
         customStyles.rel = 'stylesheet';
-        customStyles.href = 'dist/styles.css';
+        customStyles.href = 'styles.css';
         this.shadow.appendChild(customStyles);
 
         const container = document.createElement('div');
