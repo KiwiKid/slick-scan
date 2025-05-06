@@ -40,7 +40,9 @@ export default {
     json(),
     postcss({
       extract: 'docs/styles.css',
-      minimize: true
+      minimize: true,
+      use: ['sass'],
+      inject: false
     }),
     copy({
       targets: [
