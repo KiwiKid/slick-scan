@@ -1,20 +1,16 @@
-name: Build and Deploy
+name: Deploy to GitHub Pages
 
 on:
   push:
     branches: [ main ]
-  pull_request:
-    branches: [ main ]
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
       
       - name: Setup Node.js
         uses: actions/setup-node@v3
@@ -28,29 +24,15 @@ jobs:
       - name: Build
         run: npm run build
         
-      - name: Prepare deployment
-        run: |
-          # Clean demo directory
-          rm -rf demo/*
-          
-          # Copy all necessary files from dist directory
-          cp dist/demo.js demo/
-          cp dist/index.html demo/
-          cp dist/styles.css demo/
-          cp dist/bulma.min.css demo/
-          cp dist/demo.css demo/
-          
-          # List contents of demo directory to verify
-          ls -la demo/
-        
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./demo
+          publish_dir: ./dist
           publish_branch: gh-pages
           commit_message: "Deploy to GitHub Pages"
           force_orphan: true
+          enable_jekyll: false
 
  # publish:
  #   needs: build
