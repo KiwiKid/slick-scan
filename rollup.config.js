@@ -7,18 +7,6 @@ import json from '@rollup/plugin-json';
 import replace from '@rollup/plugin-replace';
 import postcss from 'rollup-plugin-postcss';
 
-const postcssPlugin = postcss({
-  extract: true,
-  minimize: true,
-  use: ['sass']
-});
-
-const demoPostcssPlugin = postcss({
-  extract: 'demo.css',
-  minimize: true,
-  use: ['sass']
-});
-
 export default [
   // Library build
   {
@@ -52,7 +40,11 @@ export default [
         requireReturnsDefault: 'auto'
       }),
       json(),
-      postcssPlugin,
+      postcss({
+        extract: 'styles.css',
+        minimize: true,
+        use: ['sass']
+      }),
       terser({
         format: {
           comments: false
@@ -60,7 +52,7 @@ export default [
       })
     ]
   },
-  // Demo build
+  // Demo build - single bundle with all dependencies
   {
     input: 'docs/index.ts',
     output: {
@@ -85,7 +77,11 @@ export default [
         include: /node_modules/,
         requireReturnsDefault: 'auto'
       }),
-      demoPostcssPlugin,
+      postcss({
+        inject: true, // Inject CSS into the bundle
+        minimize: true,
+        use: ['sass']
+      }),
       copy({
         targets: [
           { src: 'docs/index.html', dest: 'dist' }

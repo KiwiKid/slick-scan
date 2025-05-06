@@ -28,11 +28,17 @@ jobs:
       - name: Build
         run: npm run build
         
+      - name: Prepare deployment
+        run: |
+          mkdir -p demo
+          cp dist/demo.js demo/
+          cp dist/index.html demo/
+        
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist
+          publish_dir: ./demo
           publish_branch: gh-pages
           commit_message: "Deploy to GitHub Pages"
           force_orphan: true
