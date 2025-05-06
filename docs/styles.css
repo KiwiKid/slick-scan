@@ -1,3 +1,4 @@
+/* styles.css - static unsued??? 05/06/2025 */
 slick-scan {
     display: block;
     margin: 2rem auto;
@@ -189,4 +190,40 @@ slick-scan {
 
 .file.is-boxed {
     margin: 0;
+}
+
+.camera-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 5;
+}
+
+.card-guide {
+    width: 80%; /* Changed from mm to percentage */
+    height: 50%; /* Changed from mm to percentage */
+    border: 3px solid rgba(255, 255, 255, 0.9); /* Made border thicker and more opaque */
+    border-radius: 12px;
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7); /* Made overlay darker */
+    position: relative;
+    background: transparent;
+}
+
+.card-guide::before {
+    content: 'Position card here';
+    position: absolute;
+    top: -40px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+    white-space: nowrap;
 } 

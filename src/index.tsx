@@ -333,6 +333,9 @@ const App = (): JSX.Element => {
                 playsInline: true,
                 muted: true
             }),
+            React.createElement('div', { className: 'camera-overlay' },
+                React.createElement('div', { className: 'card-guide' })
+            ),
             React.createElement('button', {
                 className: 'button is-primary is-large camera-button',
                 onClick: takePhoto
