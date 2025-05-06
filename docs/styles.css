@@ -206,8 +206,8 @@ slick-scan {
 }
 
 .card-guide {
-    width: 80%; /* Changed from mm to percentage */
-    height: 50%; /* Changed from mm to percentage */
+    width: 96%; /* Changed from mm to percentage */
+    height: 75%; /* Changed from mm to percentage */
     border: 3px solid rgba(255, 255, 255, 0.9); /* Made border thicker and more opaque */
     border-radius: 12px;
     box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7); /* Made overlay darker */

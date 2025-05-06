@@ -1,5 +1,5 @@
 import type { Worker as TesseractWorker } from 'tesseract.js';
-import { createWorker } from 'tesseract.js';
+import { createWorker, PSM } from 'tesseract.js';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
 
@@ -17,9 +17,11 @@ interface NotificationProps {
 }
 
 const Notification = ({ message, type, onDismiss }: NotificationProps): JSX.Element => {
-    return React.createElement('div', { className: `notification is-${type}` },
-        React.createElement('button', { className: 'delete', onClick: onDismiss }),
-        message
+    return (
+        <div className={`notification is-${type}`}>
+            <button className="delete" onClick={onDismiss} />
+            {message}
+        </div>
     );
 };
 
@@ -38,34 +40,101 @@ const PhotoList = ({ photos }: PhotoListProps): JSX.Element => {
         }
     };
 
-    return React.createElement('div', { id: 'photoList', className: 'mt-4' },
-        [...photos].reverse().map(photo => 
-            React.createElement('div', { key: photo.id, className: 'photo-item' },
-                React.createElement('div', { className: 'columns' },
-                    React.createElement('div', { className: 'column is-one-third' },
-                        React.createElement('img', { src: photo.data, className: 'photo-preview', alt: 'Scanned' })
-                    ),
-                    React.createElement('div', { className: 'column' },
-                        React.createElement('div', { className: 'status' },
-                            'Status: ',
-                            React.createElement('span', { className: `tag ${getStatusClass(photo.status)}` },
-                                photo.status
-                            )
-                        ),
-                        photo.status === 'processing' && React.createElement('progress', {
-                            className: 'progress is-small is-primary',
-                            max: 100
-                        }, 'Processing...'),
-                        photo.text && React.createElement('div', { className: 'ocr-result' },
-                            React.createElement('strong', null, 'OCR Result:'),
-                            React.createElement('pre', null, photo.text)
-                        )
-                    )
-                )
-            )
-        )
+    return (
+        <div id="photoList" className="mt-4">
+            {[...photos].reverse().map(photo => (
+                <div key={photo.id} className="photo-item">
+                    <div className="columns">
+                        <div className="column is-one-third">
+                            <img src={photo.data} className="photo-preview" alt="Scanned" />
+                        </div>
+                        <div className="column">
+                            <div className="status">
+                                Status:{' '}
+                                <span className={`tag ${getStatusClass(photo.status)}`}>
+                                    {photo.status}
+                                </span>
+                            </div>
+                            {photo.status === 'processing' && (
+                                <progress className="progress is-small is-primary" max={100}>
+                                    Processing...
+                                </progress>
+                            )}
+                            {photo.text && (
+                                <div className="ocr-result">
+                                    <strong>OCR Result:</strong>
+                                    <pre>{photo.text}</pre>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            ))}
+        </div>
     );
 };
+
+type LicenceFields = {
+  type: 'family_season_licence';
+  id: string;
+  name: string;
+  dor: string;
+  issue: string;
+  valid: string;
+  spousePartner: string;
+  other: string[];
+};
+
+function extractFields(text: string): LicenceFields {
+  const idMatch = text.match(/\b\d{6,8}\b/);
+  const nameMatch = text.match(/NAME\s*([A-Za-z .-]+)/i);
+  const dorMatch = text.match(/DOR\s*([0-9\/]+)/i);
+  const issueMatch = text.match(/ISSUE\s*([0-9\/]+)/i);
+  const validMatch = text.match(/VALID\s*([0-9\/\- ]+)/i);
+  const spouseMatch = text.match(/SPOUSE\/PARTNER\s*([A-Za-z .-]+)/i);
+  const otherMatch = text.match(/OTHER\s*([\s\S]+?)(?:\n\s*Licence|$)/i);
+
+  return {
+    type: 'family_season_licence',
+    id: idMatch?.[0] ?? '',
+    name: nameMatch?.[1]?.trim() ?? '',
+    dor: dorMatch?.[1]?.trim() ?? '',
+    issue: issueMatch?.[1]?.trim() ?? '',
+    valid: validMatch?.[1]?.trim() ?? '',
+    spousePartner: spouseMatch?.[1]?.trim() ?? '',
+    other: otherMatch
+      ? otherMatch[1]
+          .split('\n')
+          .map(line => line.trim())
+          .filter(Boolean)
+      : [],
+  };
+}
+
+interface Scan {
+  id: string;
+  image: string;
+  ocrText: string;
+  fields: LicenceFields;
+  createdAt: number;
+}
+
+function useScans() {
+  const [scans, setScans] = React.useState<Scan[]>(() => {
+    const raw = localStorage.getItem('scans');
+    return raw ? JSON.parse(raw) : [];
+  });
+
+  React.useEffect(() => {
+    localStorage.setItem('scans', JSON.stringify(scans));
+  }, [scans]);
+
+  const addScan = React.useCallback((scan: Scan) => {
+    setScans(prev => [scan, ...prev].slice(0, 20));
+  }, []);
+
+  return { scans, addScan };
+}
 
 const App = (): JSX.Element => {
     const [photos, setPhotos] = useState<PhotoItem[]>([]);
@@ -76,6 +145,7 @@ const App = (): JSX.Element => {
     const videoRef = useRef<HTMLVideoElement | null>(null);
     const streamRef = useRef<MediaStream | null>(null);
     const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+    const { scans, addScan } = useScans();
 
     const MAX_STORAGE_ITEMS = 20;
     const MAX_IMAGE_SIZE = 1024 * 1024;
@@ -136,10 +206,24 @@ const App = (): JSX.Element => {
             setPhotos(updatedPhotos);
 
             try {
+                await worker.setParameters({
+                    tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789/:-.,@ ',
+                    tessedit_pageseg_mode: PSM.SINGLE_BLOCK,
+                    preserve_interword_spaces: '1',
+                });
                 const result = await worker.recognize(photo.data);
                 setPhotos(prev => prev.map(p =>
                     p.id === photo.id ? { ...p, status: 'completed' as const, text: result.data.text } : p
                 ));
+                // Extract fields and save scan
+                const fields = extractFields(result.data.text);
+                addScan({
+                  id: photo.id,
+                  image: photo.data,
+                  ocrText: result.data.text,
+                  fields,
+                  createdAt: Date.now(),
+                });
                 showNotification('Image processed successfully', 'success');
             } catch (error) {
                 setPhotos(prev => prev.map(p =>
@@ -150,7 +234,7 @@ const App = (): JSX.Element => {
         }
 
         setIsProcessing(false);
-    }, [isProcessing, photos, worker, showNotification]);
+    }, [isProcessing, photos, worker, showNotification, addScan]);
 
     const handleFileUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(event.target.files || []);
@@ -291,67 +375,79 @@ const App = (): JSX.Element => {
         }
     }, [isProcessing, photos, processQueue]);
 
-    return React.createElement('div', { className: 'box' },
-        React.createElement('div', { className: 'field' },
-            React.createElement('div', { className: 'buttons is-centered' },
-                React.createElement('div', { className: 'file is-boxed' },
-                    React.createElement('label', { className: 'file-label' },
-                        React.createElement('input', {
-                            className: 'file-input',
-                            type: 'file',
-                            accept: 'image/*',
-                            multiple: true,
-                            onChange: handleFileUpload
-                        }),
-                        React.createElement('span', { className: 'file-cta' },
-                            React.createElement('span', { className: 'file-icon' },
-                                React.createElement('i', { className: 'fas fa-upload' })
-                            ),
-                            React.createElement('span', { className: 'file-label' }, 'Choose photos...')
-                        )
-                    )
-                ),
-                !isCameraActive ? 
-                    React.createElement('button', {
-                        className: 'button is-primary',
-                        onClick: startCamera
-                    }, 'Open Camera') :
-                    React.createElement('button', {
-                        className: 'button is-danger',
-                        onClick: stopCamera
-                    }, 'Close Camera')
-            )
-        ),
-        isCameraActive && React.createElement('div', { className: 'camera-container' },
-            React.createElement('video', {
-                ref: (el: HTMLVideoElement | null) => {
-                    if (el) {
-                        (videoRef as React.MutableRefObject<HTMLVideoElement | null>).current = el;
-                    }
-                },
-                autoPlay: true,
-                playsInline: true,
-                muted: true
-            }),
-            React.createElement('div', { className: 'camera-overlay' },
-                React.createElement('div', { className: 'card-guide' })
-            ),
-            React.createElement('button', {
-                className: 'button is-primary is-large camera-button',
-                onClick: takePhoto
-            }, 'Take Photo')
-        ),
-        React.createElement(PhotoList, { photos }),
-        React.createElement('div', { className: 'notification-container' },
-            notifications.map(({ id, message, type }) =>
-                React.createElement(Notification, {
-                    key: id,
-                    message,
-                    type: type as 'success' | 'warning' | 'danger' | 'info',
-                    onDismiss: () => setNotifications(prev => prev.filter(n => n.id !== id))
-                })
-            )
-        )
+    return (
+        <div className="box">
+            <div className="field">
+                <div className="buttons is-centered">
+                    <div className="file is-boxed">
+                        <label className="file-label">
+                            <input
+                                className="file-input"
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                onChange={handleFileUpload}
+                            />
+                            <span className="file-cta">
+                                <span className="file-icon">
+                                    <i className="fas fa-upload" />
+                                </span>
+                                <span className="file-label">Choose photos...</span>
+                            </span>
+                        </label>
+                    </div>
+                    {!isCameraActive ? (
+                        <button
+                            className="button is-primary"
+                            onClick={startCamera}
+                        >
+                            Open Camera
+                        </button>
+                    ) : (
+                        <button
+                            className="button is-danger"
+                            onClick={stopCamera}
+                        >
+                            Close Camera
+                        </button>
+                    )}
+                </div>
+            </div>
+            {isCameraActive && (
+                <div className="camera-container">
+                    <video
+                        ref={(el: HTMLVideoElement | null) => {
+                            if (el) {
+                                (videoRef as React.MutableRefObject<HTMLVideoElement | null>).current = el;
+                            }
+                        }}
+                        autoPlay
+                        playsInline
+                        muted
+                    />
+                    <div className="camera-overlay">
+                        <div className="card-guide" />
+                    </div>
+                    <button
+                        className="button is-primary is-large camera-button"
+                        onClick={takePhoto}
+                    >
+                        Take Photo
+                    </button>
+                </div>
+            )}
+            <PhotoList photos={photos} />
+            <div className="notification-container">
+                {notifications.map(({ id, message, type }) => (
+                    <Notification
+                        key={id}
+                        message={message}
+                        type={type as 'success' | 'warning' | 'danger' | 'info'}
+                        onDismiss={() => setNotifications(prev => prev.filter(n => n.id !== id))}
+                    />
+                ))}
+            </div>
+        </div>
     );
 };
 
