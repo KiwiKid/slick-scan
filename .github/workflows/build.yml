@@ -30,21 +30,24 @@ jobs:
         
       - name: Prepare deployment
         run: |
-          # Clean docs directory
-          rm -rf docs/*
+          # Clean demo directory
+          rm -rf demo/*
           
-          # Copy all necessary files
-          cp dist/demo.js docs/
-          cp dist/index.html docs/
-          cp dist/styles.css docs/
-          cp dist/bulma.min.css docs/
-          cp dist/demo.css docs/
+          # Copy all necessary files from dist directory
+          cp dist/demo.js demo/
+          cp dist/index.html demo/
+          cp dist/styles.css demo/
+          cp dist/bulma.min.css demo/
+          cp dist/demo.css demo/
+          
+          # List contents of demo directory to verify
+          ls -la demo/
         
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs
+          publish_dir: ./demo
           publish_branch: gh-pages
           commit_message: "Deploy to GitHub Pages"
           force_orphan: true
