@@ -31,8 +31,10 @@ jobs:
       - name: Build
         run: npm run build
         
-      - name: Copy index.html
-        run: cp index.html dist/
+      - name: Prepare deployment
+        run: |
+          cp static/index.html dist/
+          sed -i 's|src="/|src="|g' dist/index.html
         
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
