@@ -112,12 +112,28 @@ function extractFields(text: string): LicenceFields {
 }
 
 interface Scan {
-  id: string;
-  image: string;
-  ocrText: string;
-  fields: LicenceFields;
-  createdAt: number;
-}
+    id: string;
+    image: string;
+    ocrText: string;
+    fields: LicenceFields;
+    createdAt: number;
+  }
+
+const copyCSV = (scans: Scan[]) => {
+  const header = 'id|name|dor|issue|valid|spousePartner|other|createdAt';
+  const rows = scans.map(scan => [
+    scan.fields.id,
+    scan.fields.name,
+    scan.fields.dor,
+    scan.fields.issue,
+    scan.fields.valid,
+    scan.fields.spousePartner,
+    scan.fields.other.join(';'),
+    scan.createdAt
+  ].map(val => (val ?? '').toString().replace(/\|/g, ' ')).join('|'));
+  const csv = [header, ...rows].join('\n');
+  navigator.clipboard.writeText(csv);
+};
 
 function useScans() {
   const [scans, setScans] = React.useState<Scan[]>(() => {
@@ -208,7 +224,7 @@ const App = (): JSX.Element => {
             try {
                 await worker.setParameters({
                     tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789/:-.,@ ',
-                    tessedit_pageseg_mode: PSM.SINGLE_BLOCK,
+                    tessedit_pageseg_mode: PSM.SINGLE_COLUMN,
                     preserve_interword_spaces: '1',
                 });
                 const result = await worker.recognize(photo.data);
@@ -412,6 +428,15 @@ const App = (): JSX.Element => {
                         </button>
                     )}
                 </div>
+                <button
+                    className="button is-info"
+                    onClick={() => {
+                        copyCSV(scans);
+                        showNotification('Copied all scans as CSV to clipboard', 'success');
+                    }}
+                >
+                    Copy CSV ({scans.length})
+                </button>
             </div>
             {isCameraActive && (
                 <div className="camera-container">
@@ -447,6 +472,37 @@ const App = (): JSX.Element => {
                     />
                 ))}
             </div>
+            {/* Bulma Table of Scans */}
+            <div className="table-container" style={{ marginTop: '2rem' }}>
+                <table className="table is-striped is-fullwidth is-hoverable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>DOR</th>
+                            <th>Issue</th>
+                            <th>Valid</th>
+                            <th>Spouse/Partner</th>
+                            <th>Other</th>
+                            <th>Created</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {scans.map(scan => (
+                            <tr key={scan.id}>
+                                <td>{scan.fields.id}</td>
+                                <td>{scan.fields.name}</td>
+                                <td>{scan.fields.dor}</td>
+                                <td>{scan.fields.issue}</td>
+                                <td>{scan.fields.valid}</td>
+                                <td>{scan.fields.spousePartner}</td>
+                                <td>{scan.fields.other.join('; ')}</td>
+                                <td>{new Date(scan.createdAt).toLocaleString()}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
         </div>
     );
 };
@@ -479,4 +535,4 @@ class SlickScan extends HTMLElement {
     }
 }
 
-customElements.define('slick-scan', SlickScan); 
+customElements.define('slick-scan', SlickScan);
