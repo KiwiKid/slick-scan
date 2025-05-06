@@ -7,7 +7,8 @@ slick-scan {
 }
 
 body {
-    background-color: lightblue
+    background-color: #000000;
+    color: #ffffff;
 }
 
 .photo-preview {
@@ -19,8 +20,10 @@ body {
 .photo-item {
     margin-bottom: 1rem;
     padding: 1rem;
-    border: 1px solid #dbdbdb;
+    border: 1px solid #333333;
     border-radius: 4px;
+    background-color: #ffffff;
+    color: #000000;
 }
 
 .progress-bar {
@@ -28,9 +31,14 @@ body {
 }
 
 .ocr-result {
-    margin-top: 0.5rem;
-    white-space: pre-wrap;
+    margin-top: 1rem;
+    padding: 0.5rem;
+    background-color: #ffffff;
+    border-radius: 4px;
     font-family: monospace;
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: #000000;
 }
 
 .notification-container {
@@ -91,10 +99,11 @@ body {
 }
 
 .camera-preview .box {
-    background-color: white;
+    background-color: #ffffff;
     padding: 1rem;
     border-radius: 4px;
-    box-shadow: 0 2px 3px rgba(10, 10, 10, 0.1);
+    box-shadow: 0 2px 3px rgba(255, 255, 255, 0.1);
+    color: #000000;
 }
 
 .camera-feed {
@@ -117,7 +126,6 @@ body {
     max-width: 100%;
     margin: 0;
     padding: 0;
-    background: #000;
     border-radius: 0;
     overflow: visible;
     aspect-ratio: 16/9;
