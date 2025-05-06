@@ -35,9 +35,10 @@ jobs:
           
           # Copy all necessary files
           cp dist/demo.js docs/
-          cp static/index.html docs/  # Ensure index.html exists
+          cp static/index.html docs/
           cp static/styles.css docs/
-          cp node_modules/bulma/css/bulma.min.css docs/
+          cp static/bulma.min.css docs/
+          cp static/demo.css docs/
         
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
