@@ -233,6 +233,7 @@ interface Scan {
     fields: LicenceFields;
     matches: FieldMatches;
     createdAt: number;
+    fullScanDetails: any;
   }
 
 const copyCSV = (scans: Scan[]) => {
@@ -403,11 +404,24 @@ const SCAN_MODES = [{
     name: 'Auto Mode',
     description: 'Best for detecting titles and values',
     tesseractConfig: {
+        //tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789/:-.,@ ',
+        tessedit_pageseg_mode: PSM.AUTO,
+    },
+},{
+    id: 'auto',
+    name: 'Auto Mode - with whitelist',
+    description: 'Best for detecting titles and values',
+    tesseractConfig: {
         tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789/:-.,@ ',
         tessedit_pageseg_mode: PSM.AUTO,
-        preserve_interword_spaces: '1',
-        textord_min_linesize: '2.5',  // Helps detect smaller text
-        textord_max_linesize: '3.5',  // Helps with larger text
+    },
+},{
+    id: 'sparse_text_osd',
+    name: 'Sparse Text OSD Mode',
+    description: 'Sparse Text OSD Mode',
+    tesseractConfig: {
+        //tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789/:-.,@ ',
+        tessedit_pageseg_mode: PSM.SPARSE_TEXT_OSD,
     },
 },
 {
@@ -419,7 +433,37 @@ const SCAN_MODES = [{
         tessedit_pageseg_mode: PSM.SINGLE_BLOCK,
         preserve_interword_spaces: '1',
     },
+},{
+    id: 'auto-extended',
+    name: 'Auto Mode - get rich data',
+    description: 'Best for detecting titles and values',
+    tesseractConfig: {
+        tessedit_pageseg_mode: PSM.AUTO,
+        tessedit_create_box: '1',
+        tessedit_create_unlv: '1',
+        tessedit_create_osd: '1',
+    },
 }];
+
+interface ScanDetailsProps {
+    ocrText: string;
+    fullScanDetails: any;
+}
+
+const ScanDetails: React.FC<ScanDetailsProps> = ({ ocrText, fullScanDetails }) => {
+    return (
+        <div className="scan-details">
+            <details>
+                <summary>OCR Text</summary>
+                <pre><code>{ocrText}</code></pre>
+            </details>
+            <details>
+                <summary>Full Scan Details</summary>
+                <pre><code>{JSON.stringify(fullScanDetails, null, 2)}</code></pre>
+            </details>
+        </div>
+    );
+};
 
 const App = (): JSX.Element => {
     const [photos, setPhotos] = useState<PhotoItem[]>([]);
@@ -506,6 +550,7 @@ const App = (): JSX.Element => {
                 fields,
                 matches,
                 createdAt: Date.now(),
+                fullScanDetails: result.data,
             });
             showNotification('Image processed successfully', 'success', () => {
                 const scanElement = document.querySelector(`#scan-${photo.id}`);
@@ -817,7 +862,8 @@ const App = (): JSX.Element => {
                                 
                                 </ul>
                                 </td>
-                                <td><details><summary>OCR Text</summary>{scan.ocrText}</details></td>                            </tr>
+                                <td><ScanDetails ocrText={scan.ocrText} fullScanDetails={scan.fullScanDetails} /></td>
+                            </tr>
                         ))}
                     </tbody>
                 </table>
