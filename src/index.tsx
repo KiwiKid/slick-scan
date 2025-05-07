@@ -1063,63 +1063,63 @@ const App = (): JSX.Element => {
                                 <td>{new Date(scan.createdAt).toLocaleString()}
                                     <div className="box p-2">
                                         <div className="columns is-multiline is-mobile is-gapless">
-                                            <div className="column is-6">
+                                            <div className="column is-12-mobile is-6-tablet">
                                                 <div className="field has-addons mb-1">
                                                     <div className="control is-narrow">
-                                                        <span className="button is-static is-small py-1 px-2 has-text-italic" style={{ minWidth: '60px' }}>ID</span>
+                                                        <span className="button is-static is-small py-1 px-2 has-text-italic" style={{ minWidth: '60px', fontSize: '0.75rem' }}>ID</span>
                                                     </div>
                                                     <div className="control is-expanded">
-                                                        <div className="input is-static is-small py-1 has-text-weight-bold">{scan.fields.id}</div>
+                                                        <div className="input is-static is-small py-1 has-text-weight-bold" style={{ fontSize: '0.75rem' }}>{scan.fields.id}</div>
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div className="column is-6">
+                                            <div className="column is-12-mobile is-6-tablet">
                                                 <div className="field has-addons mb-1">
                                                     <div className="control is-narrow">
-                                                        <span className="button is-static is-small py-1 px-2 has-text-italic" style={{ minWidth: '60px' }}>Name</span>
+                                                        <span className="button is-static is-small py-1 px-2 has-text-italic" style={{ minWidth: '60px', fontSize: '0.75rem' }}>Name</span>
                                                     </div>
                                                     <div className="control is-expanded">
-                                                        <div className="input is-static is-small py-1 has-text-weight-bold">{scan.fields.name}</div>
+                                                        <div className="input is-static is-small py-1 has-text-weight-bold" style={{ fontSize: '0.75rem' }}>{scan.fields.name}</div>
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div className="column is-6">
+                                            <div className="column is-12-mobile is-6-tablet">
                                                 <div className="field has-addons mb-1">
                                                     <div className="control is-narrow">
-                                                        <span className="button is-static is-small py-1 px-2 has-text-italic" style={{ minWidth: '60px' }}>DOR</span>
+                                                        <span className="button is-static is-small py-1 px-2 has-text-italic" style={{ minWidth: '60px', fontSize: '0.75rem' }}>DOR</span>
                                                     </div>
                                                     <div className="control is-expanded">
-                                                        <div className="input is-static is-small py-1 has-text-weight-bold">{scan.fields.dor}</div>
+                                                        <div className="input is-static is-small py-1 has-text-weight-bold" style={{ fontSize: '0.75rem' }}>{scan.fields.dor}</div>
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div className="column is-6">
+                                            <div className="column is-12-mobile is-6-tablet">
                                                 <div className="field has-addons mb-1">
                                                     <div className="control is-narrow">
-                                                        <span className="button is-static is-small py-1 px-2 has-text-italic" style={{ minWidth: '60px' }}>Issue</span>
+                                                        <span className="button is-static is-small py-1 px-2 has-text-italic" style={{ minWidth: '60px', fontSize: '0.75rem' }}>Issue</span>
                                                     </div>
                                                     <div className="control is-expanded">
-                                                        <div className="input is-static is-small py-1 has-text-weight-bold">{scan.fields.issue}</div>
+                                                        <div className="input is-static is-small py-1 has-text-weight-bold" style={{ fontSize: '0.75rem' }}>{scan.fields.issue}</div>
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div className="column is-6">
+                                            <div className="column is-12-mobile is-6-tablet">
                                                 <div className="field has-addons mb-1">
                                                     <div className="control is-narrow">
-                                                        <span className="button is-static is-small py-1 px-2 has-text-italic" style={{ minWidth: '60px' }}>Valid</span>
+                                                        <span className="button is-static is-small py-1 px-2 has-text-italic" style={{ minWidth: '60px', fontSize: '0.75rem' }}>Valid</span>
                                                     </div>
                                                     <div className="control is-expanded">
-                                                        <div className="input is-static is-small py-1 has-text-weight-bold">{scan.fields.valid}</div>
+                                                        <div className="input is-static is-small py-1 has-text-weight-bold" style={{ fontSize: '0.75rem' }}>{scan.fields.valid}</div>
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div className="column is-6">
+                                            <div className="column is-12-mobile is-6-tablet">
                                                 <div className="field has-addons mb-1">
                                                     <div className="control is-narrow">
-                                                        <span className="button is-static is-small py-1 px-2 has-text-italic" style={{ minWidth: '60px' }}>Partner</span>
+                                                        <span className="button is-static is-small py-1 px-2 has-text-italic" style={{ minWidth: '60px', fontSize: '0.75rem' }}>Partner</span>
                                                     </div>
                                                     <div className="control is-expanded">
-                                                        <div className="input is-static is-small py-1 has-text-weight-bold">{scan.fields.spousePartner}</div>
+                                                        <div className="input is-static is-small py-1 has-text-weight-bold" style={{ fontSize: '0.75rem' }}>{scan.fields.spousePartner}</div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -1127,10 +1127,10 @@ const App = (): JSX.Element => {
                                                 <div className="column is-12">
                                                     <div className="field has-addons mb-1">
                                                         <div className="control is-narrow">
-                                                            <span className="button is-static is-small py-1 px-2 has-text-italic" style={{ minWidth: '60px' }}>Other</span>
+                                                            <span className="button is-static is-small py-1 px-2 has-text-italic" style={{ minWidth: '60px', fontSize: '0.75rem' }}>Other</span>
                                                         </div>
                                                         <div className="control is-expanded">
-                                                            <div className="input is-static is-small py-1 has-text-weight-bold">{scan.fields.other}</div>
+                                                            <div className="input is-static is-small py-1 has-text-weight-bold" style={{ fontSize: '0.75rem' }}>{scan.fields.other}</div>
                                                         </div>
                                                     </div>
                                                 </div>
