@@ -128,7 +128,7 @@ body {
     padding: 0;
     border-radius: 0;
     overflow: visible;
-    aspect-ratio: 16/9;
+    aspect-ratio: 1.586/1; /* Standard credit card aspect ratio */
     height: auto;
     max-height: 80vh;
 }

@@ -632,11 +632,27 @@ const App = (): JSX.Element => {
         if (!videoRef.current) return;
 
         const canvas = document.createElement('canvas');
-        canvas.width = videoRef.current.videoWidth;
-        canvas.height = videoRef.current.videoHeight;
+        const videoWidth = videoRef.current.videoWidth;
+        const videoHeight = videoRef.current.videoHeight;
+        
+        // Calculate dimensions to maintain card aspect ratio (1.586:1)
+        let width = videoWidth;
+        let height = videoWidth / 1.586;
+        
+        // If the calculated height is too tall, scale based on height instead
+        if (height > videoHeight) {
+            height = videoHeight;
+            width = videoHeight * 1.586;
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
         
         const ctx = canvas.getContext('2d');
-        ctx?.drawImage(videoRef.current, 0, 0);
+        // Center the crop
+        const x = (videoWidth - width) / 2;
+        const y = (videoHeight - height) / 2;
+        ctx?.drawImage(videoRef.current, x, y, width, height, 0, 0, width, height);
         
         const dataUrl = canvas.toDataURL('image/jpeg');
         try {
