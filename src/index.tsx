@@ -481,7 +481,7 @@ const App = (): JSX.Element => {
     const MAX_IMAGE_SIZE = 1024 * 1024;
     const MAX_STORED_IMAGE_SIZE = 200 * 1024;
     const COMPRESSED_WIDTH = 800;
-    const JPEG_QUALITY = 0.6;
+    const JPEG_QUALITY = 10;
 
     const showNotification = useCallback((message: string, type: 'success' | 'warning' | 'danger' | 'info' = 'info', onClick?: () => void) => {
         const id = Date.now().toString();
