@@ -82,7 +82,7 @@ type LicenceFields = {
   issue: string;
   valid: string;
   spousePartner: string;
-  other: string[];
+  other: string;
   createdAt: number;
 };
 
@@ -108,8 +108,9 @@ export function extractFields(text: string): LicenceFields {
           .split('\n')
           .map(line => line.trim())
           .filter(Boolean)
-      : [],
-    createdAt: Date.now(),
+          .join(', ')
+      : '',
+    createdAt: Date.now()
   };
 }
 
@@ -118,6 +119,7 @@ interface FieldMatch {
   confidence: number;
   line: number;
   pattern: string;
+  position?: number;
 }
 
 interface FieldMatches {
@@ -130,8 +132,32 @@ interface FieldMatches {
   other: FieldMatch[];
 }
 
-export function extractFieldsV2(text: string): { fields: LicenceFields; matches: FieldMatches } {
-  const lines = text.split('\n');
+function isValidDate(dateStr: string): boolean {
+  const date = new Date(dateStr);
+  return !isNaN(date.getTime());
+}
+
+function normalizeDate(dateStr: string): string {
+  // Handle various date formats and normalize to DD/MM/YYYY
+  const parts = dateStr.split(/[\/\-]/);
+  if (parts.length === 3) {
+    const [day, month, year] = parts;
+    // Handle single digit days/months and remove any non-digit characters
+    const normalizedDay = day.replace(/[^\d]/g, '').padStart(2, '0');
+    const normalizedMonth = month.padStart(2, '0');
+    const fullYear = year.length === 2 ? `20${year}` : year;
+    return `${normalizedDay}/${normalizedMonth}/${fullYear}`;
+  }
+  return dateStr;
+}
+
+function calculatePositionConfidence(position: number, expectedPosition: number): number {
+  const distance = Math.abs(position - expectedPosition);
+  return Math.max(0, 1 - (distance * 0.1)); // Decrease confidence by 0.1 for each position away
+}
+
+export function extractFieldsV2(text: string): { success: boolean; fields: LicenceFields; matches: FieldMatches } {
+  const lines = text.split('\n').map(line => line.trim()).filter(Boolean);
   const matches: FieldMatches = {
     id: [],
     name: [],
@@ -142,67 +168,179 @@ export function extractFieldsV2(text: string): { fields: LicenceFields; matches:
     other: []
   };
 
-  // Define patterns for each field with their confidence scores
-  const patterns: Array<{
-    field: keyof FieldMatches;
-    pattern: RegExp;
-    confidence: number;
-  }> = [
-    { field: 'id', pattern: /\b\d{6,8}\b/g, confidence: 1.0 },
-    { field: 'name', pattern: /NAME[\s:]+([A-Za-z .-]+)(?:\n|$)/i, confidence: 0.9 },
-    { field: 'dor', pattern: /DOR[\s:]+([0-9\/]+)(?:\n|$)/i, confidence: 0.9 },
-    { field: 'issue', pattern: /ISSUE[\s:]+([0-9\/]+)(?:\n|$)/i, confidence: 0.9 },
-    { field: 'valid', pattern: /VALID[\s:]+([0-9\/\- ]+)(?:\n|$)/i, confidence: 0.9 },
-    { field: 'spousePartner', pattern: /SPOUSE\/PARTNER[\s:]+([A-Za-z .-]+)(?:\n|$)/i, confidence: 0.8 },
-    { field: 'other', pattern: /OTHER[\s]*\n([\s\S]+?)(?:\n\s*Licence|$)/i, confidence: 0.7 }
-  ];
-
   // First pass: Find all potential matches
   lines.forEach((line, lineNum) => {
-    patterns.forEach(({ field, pattern, confidence }) => {
-      if (field === 'id') {
-        const idMatches = line.match(pattern);
-        if (idMatches) {
-          idMatches.forEach(match => {
-            matches[field as keyof FieldMatches].push({
-              value: match,
-              confidence,
-              line: lineNum,
-              pattern: pattern.toString()
-            });
-          });
-        }
-      } else {
-        const match = line.match(pattern);
-        if (match) {
-          matches[field as keyof FieldMatches].push({
-            value: match[1]?.trim() ?? match[0],
-            confidence,
-            line: lineNum,
-            pattern: pattern.toString()
-          });
-        }
-      }
-    });
-  });
+    // Handle ID
+    const idMatch = line.match(/\b\d{6,8}\b/);
+    if (idMatch) {
+      matches.id.push({
+        value: idMatch[0],
+        confidence: 1.0,
+        line: lineNum,
+        pattern: 'id-pattern',
+        position: lineNum
+      });
+    }
 
-  // Second pass: Look for contextual matches
-  // For example, if we find a date near a "DOR" label, increase its confidence
-  lines.forEach((line, lineNum) => {
-    if (line.includes('DOR') && !matches.dor.some(m => m.line === lineNum)) {
-      const dateMatch = line.match(/\d{1,2}\/\d{1,2}\/\d{2,4}/);
+    // Handle Name
+    const nameMatch = line.match(/NAME[\s:]+([A-Za-z .-]+)(?:\n|$)/i) ||
+                     line.match(/^([A-Za-z .-]+)\s+\d{6,8}$/);
+    if (nameMatch) {
+      matches.name.push({
+        value: nameMatch[1]?.trim() ?? nameMatch[0],
+        confidence: nameMatch[0].startsWith('NAME') ? 1.0 : 0.9,
+        line: lineNum,
+        pattern: 'name-pattern',
+        position: lineNum
+      });
+    }
+
+    // Handle Spouse/Partner
+    const spouseMatch = line.match(/SPOUSE\/PARTNER[\s:]+([A-Za-z .-]+)(?:\n|$)/i) ||
+                       line.match(/^([A-Za-z .-]+)(?:\s+Rd|\s+Street|\s+Avenue|\s+Road)/i);
+    if (spouseMatch) {
+      matches.spousePartner.push({
+        value: spouseMatch[1]?.trim() ?? spouseMatch[0],
+        confidence: spouseMatch[0].toLowerCase().includes('spouse') ? 1.0 : 0.8,
+        line: lineNum,
+        pattern: 'spouse-pattern',
+        position: lineNum
+      });
+    }
+
+    // Handle labeled dates first
+    if (line.match(/\bDOR\b/i)) {
+      const dateMatch = line.match(/\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/);
       if (dateMatch) {
         matches.dor.push({
-          value: dateMatch[0],
-          confidence: 0.7,
+          value: normalizeDate(dateMatch[0]),
+          confidence: 1.0,
           line: lineNum,
-          pattern: 'contextual'
+          pattern: 'dor-labeled',
+          position: lineNum
         });
+      }
+    }
+    if (line.match(/\bISSUE[D]?\b/i)) {
+      const dateMatch = line.match(/\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/);
+      if (dateMatch) {
+        matches.issue.push({
+          value: normalizeDate(dateMatch[0]),
+          confidence: 1.0,
+          line: lineNum,
+          pattern: 'issue-labeled',
+          position: lineNum
+        });
+      }
+    }
+    if (line.match(/\bVALID\b/i)) {
+      const dateMatch = line.match(/\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/);
+      if (dateMatch) {
+        matches.valid.push({
+          value: normalizeDate(dateMatch[0]),
+          confidence: 1.0,
+          line: lineNum,
+          pattern: 'valid-labeled',
+          position: lineNum
+        });
+      }
+    }
+
+    // Handle unlabeled dates
+    const dates = line.match(/\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/g);
+    if (dates) {
+      // First check for a range pattern
+      const rangeMatch = line.match(/(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})\s*[-–]\s*(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/);
+      if (rangeMatch) {
+        matches.valid.push({
+          value: `${normalizeDate(rangeMatch[1])} - ${normalizeDate(rangeMatch[2])}`,
+          confidence: 0.95,
+          line: lineNum,
+          pattern: 'valid-range',
+          position: lineNum
+        });
+        // Remove the range dates from the array
+        dates.splice(dates.indexOf(rangeMatch[1]), 1);
+        dates.splice(dates.indexOf(rangeMatch[2]), 1);
+      }
+      
+      // Handle remaining dates
+      if (dates.length > 0 && !line.match(/\b(?:DOR|ISSUE|VALID)\b/i)) {
+        // If we have exactly 3 dates in a line and they're not labeled
+        if (dates.length === 3) {
+          // First date is usually DOR (oldest)
+          const sortedDates = dates.map(d => ({ date: d, timestamp: new Date(normalizeDate(d)).getTime() }))
+            .sort((a, b) => a.timestamp - b.timestamp);
+          
+          matches.dor.push({
+            value: normalizeDate(sortedDates[0].date),
+            confidence: 0.9,
+            line: lineNum,
+            pattern: 'dor-position-oldest',
+            position: lineNum
+          });
+          
+          matches.issue.push({
+            value: normalizeDate(sortedDates[1].date),
+            confidence: 0.85,
+            line: lineNum,
+            pattern: 'issue-position-middle',
+            position: lineNum
+          });
+          
+          // Only add the third date as valid if we haven't found a range pattern
+          if (!matches.valid.some(m => m.line === lineNum)) {
+            matches.valid.push({
+              value: normalizeDate(sortedDates[2].date),
+              confidence: 0.8,
+              line: lineNum,
+              pattern: 'valid-position-newest',
+              position: lineNum
+            });
+          }
+        } else if (dates.length === 1) {
+          // Single unlabeled date - check if it's near name or ID
+          const dateValue = normalizeDate(dates[0]);
+          const dateTimestamp = new Date(dateValue).getTime();
+          const now = Date.now();
+          const yearsDiff = (now - dateTimestamp) / (1000 * 60 * 60 * 24 * 365);
+          
+          if (yearsDiff > 18 && yearsDiff < 100) {
+            // Likely a DOR if it's a reasonable age
+            matches.dor.push({
+              value: dateValue,
+              confidence: 0.8,
+              line: lineNum,
+              pattern: 'dor-age-range',
+              position: lineNum
+            });
+          }
+        }
       }
     }
   });
 
-  // Select the best matches based on confidence and position
+  // Handle other fields (children)
+  const otherMatches = lines
+    .filter(line => 
+      !/^(NAME|DOR|ISSUE|VALID|SPOUSE\/PARTNER|OTHER|Licence|FAMILY SEASON LICENCE|wae|srouserasmen|cance|Comin|ets)\b/i.test(line) &&
+      !/\d{6,8}/.test(line) &&
+      !/\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/.test(line) &&
+      !/(?:\s+Rd|\s+Street|\s+Avenue|\s+Road)/i.test(line) &&
+      line.trim().length > 0 &&
+      /^[A-Za-z][A-Za-z\s-]+$/.test(line.trim()) // Must be a name-like string
+    )
+    .map((line, index) => ({
+      value: line.trim(),
+      confidence: 0.8,
+      line: index,
+      pattern: 'other-content',
+      position: index
+    }));
+
+  matches.other.push(...otherMatches);
+
+  // Get best matches by confidence
   const bestMatches = {
     id: matches.id.sort((a, b) => b.confidence - a.confidence)[0]?.value ?? '',
     name: matches.name.sort((a, b) => b.confidence - a.confidence)[0]?.value ?? '',
@@ -214,9 +352,11 @@ export function extractFieldsV2(text: string): { fields: LicenceFields; matches:
       .sort((a, b) => b.confidence - a.confidence)
       .map(m => m.value)
       .filter(Boolean)
+      .join(', ')
   };
 
   return {
+    success: bestMatches.id !== '' && bestMatches.name !== '' && bestMatches.dor !== '' && bestMatches.issue !== '' && bestMatches.valid !== '',
     fields: {
       type: 'family_season_licence',
       ...bestMatches,
@@ -233,8 +373,8 @@ interface Scan {
     fields: LicenceFields;
     matches: FieldMatches;
     createdAt: number;
-    fullScanDetails: any;
-  }
+    status?: 'queued' | 'processing' | 'completed' | 'error';
+}
 
 const copyCSV = (scans: Scan[]) => {
   const header = 'id|name|dor|issue|valid|spousePartner|other|createdAt';
@@ -245,7 +385,7 @@ const copyCSV = (scans: Scan[]) => {
     scan.fields.issue,
     scan.fields.valid,
     scan.fields.spousePartner,
-    scan.fields.other.join(';'),
+    scan.fields.other,
     scan.createdAt
   ].map(val => (val ?? '').toString().replace(/\|/g, ' ')).join('|'));
   const csv = [header, ...rows].join('\n');
@@ -382,12 +522,24 @@ function useScans() {
   }, [scans]);
 
   const addScan = React.useCallback((scan: Scan) => {
-    console.log('Adding new scan:', {
+    console.log('Adding/updating scan:', {
       id: scan.id,
       createdAt: new Date(scan.createdAt).toISOString(),
       fields: scan.fields
     });
-    setScans(prev => [scan, ...prev].slice(0, 20));
+    setScans(prev => {
+      // Find if we already have a scan with this ID
+      const existingIndex = prev.findIndex(s => s.id === scan.id);
+      if (existingIndex >= 0) {
+        // Update existing scan
+        const updated = [...prev];
+        updated[existingIndex] = scan;
+        return updated;
+      } else {
+        // Add new scan
+        return [scan, ...prev].slice(0, 20);
+      }
+    });
   }, []);
 
   const clearScans = React.useCallback(() => {
@@ -446,21 +598,47 @@ const SCAN_MODES = [{
 }];
 
 interface ScanDetailsProps {
-    ocrText: string;
-    fullScanDetails: any;
+    scan: Scan;
 }
 
-const ScanDetails: React.FC<ScanDetailsProps> = ({ ocrText, fullScanDetails }) => {
+const SummaryDetails = (obj: any) => {
+    if(typeof obj !== 'object') {
+        return <div>{obj}</div>;
+    }
+    return Object.keys(obj).map(key => {
+        return <details key={key}><summary>{key}</summary><SummaryDetails key={key}>{obj[key]}</SummaryDetails></details>
+    });
+}
+
+const ScanDetails: React.FC<ScanDetailsProps> = ({ scan }) => {
     return (
         <div className="scan-details">
+            <div className="mt-2">
+                {scan.status === 'processing' && (
+                                    <progress className="progress is-small is-primary mt-1" max={100}>
+                                        Processing...
+                                    </progress>
+                                )}
+                <span className={`tag ${scan.status === 'processing' ? 'is-info' : 
+                                    scan.status === 'completed' ? 'is-success' : 
+                                    scan.status === 'error' ? 'is-danger' : 'is-warning'}`}>
+                    {scan.status || 'completed'}
+                </span>
+            </div>
+            <div className="mt-2">
+            <button
+            className="button is-info m-2"
+            onClick={() => {
+               copyCSV([scan]);
+            }}>Copy CSV</button>
+            <button className="button is-info m-2" onClick={() => {
+                navigator.clipboard.writeText(scan.ocrText);
+            }}>Copy OCR Text</button>
             <details>
                 <summary>OCR Text</summary>
-                <pre><code>{ocrText}</code></pre>
+                <pre><code>{scan.ocrText}</code></pre>
             </details>
-            <details>
-                <summary>Full Scan Details</summary>
-                <pre><code>{JSON.stringify(fullScanDetails, null, 2)}</code></pre>
-            </details>
+            </div>
         </div>
     );
 };
@@ -526,8 +704,16 @@ const App = (): JSX.Element => {
         });
     }, []);
 
-    const processImage = useCallback(async (photo: PhotoItem): Promise<void> => {
-        if (!worker) return;
+    type ProcessImageResult = {
+        success: boolean;
+        fields: LicenceFields;
+        matches: FieldMatches;
+        createdAt: number;
+        ocrText: string;
+    }
+
+    const processImage = useCallback(async (photo: PhotoItem): Promise<ProcessImageResult | null> => {
+        if (!worker) return null;
 
         try {
             const selectedMode = SCAN_MODES.find(mode => mode.id === selectedScanMode);
@@ -537,35 +723,37 @@ const App = (): JSX.Element => {
 
             await worker.setParameters(selectedMode.tesseractConfig);
             const result = await worker.recognize(photo.data);
-            console.log('Tesseract Result:', result.data.text);
+            const ocrText = result.data.text;
+            console.log('Tesseract Result:', ocrText);
             setPhotos(prev => prev.map(p =>
-                p.id === photo.id ? { ...p, status: 'completed' as const, text: result.data.text } : p
+                p.id === photo.id ? { ...p, status: 'completed' as const, text: ocrText } : p
             ));
             // Extract fields and save scan
-            const { fields, matches } = extractFieldsV2(result.data.text);
+            const { fields, matches } = extractFieldsV2(ocrText);
+            
+            // Log full scan details to console instead of storing
+            console.log('Full scan details:', {
+                id: photo.id,
+                fullScanDetails: result.data
+            });
+            
             addScan({
                 id: photo.id,
                 image: photo.data,
-                ocrText: result.data.text,
+                ocrText: ocrText,
                 fields,
                 matches,
                 createdAt: Date.now(),
-                fullScanDetails: result.data,
+                status: 'completed'
             });
-            showNotification('Image processed successfully', 'success', () => {
-                const scanElement = document.querySelector(`#scan-${photo.id}`);
-                if (scanElement) {
-                    scanElement.scrollIntoView({ behavior: 'smooth' });
-                }else {
-                    console.warn('No scan element found for photo: - not scrolling to it', photo.id);
-                }
-            });
-
+            showNotification('Image processed successfully', 'success');
+            return { success: true, ocrText, fields, matches, createdAt: Date.now() };
         } catch (error) {
             setPhotos(prev => prev.map(p =>
                 p.id === photo.id ? { ...p, status: 'error' as const } : p
             ));
             showNotification('Failed to process image', 'danger');
+            return null;
         }
     }, [worker, addScan, showNotification, selectedScanMode]);
 
@@ -580,11 +768,51 @@ const App = (): JSX.Element => {
                 p.id === photo.id ? { ...p, status: 'processing' as const } : p
             );
             setPhotos(updatedPhotos);
-            await processImage(photo);
+            addScan({
+                id: photo.id,
+                image: photo.data,
+                ocrText: '',
+                fields: {
+                    type: 'family_season_licence',
+                    id: '',
+                    name: '',
+                    dor: '',
+                    issue: '',
+                    valid: '',
+                    spousePartner: '',
+                    other: '',
+                    createdAt: Date.now(),
+                },
+                matches: {
+                    id: [],
+                    name: [],
+                    dor: [],
+                    issue: [],
+                    valid: [],
+                    spousePartner: [],
+                    other: [],
+                },
+                createdAt: Date.now(),
+                status: 'processing',
+            });
+
+
+            const result = await processImage(photo);
+            console.log('Process image result:', result);
+            if (result) {
+                addScan({
+                    id: photo.id,
+                    image: photo.data,
+                    ocrText: result.ocrText,
+                    fields: result.fields,
+                    matches: result.matches,
+                    createdAt: result.createdAt,
+                });
+            }
         }
 
         setIsProcessing(false);
-    }, [isProcessing, photos, worker, processImage]);
+    }, [isProcessing, photos, worker, processImage, addScan]);
 
     const handleFileUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(event.target.files || []);
@@ -770,23 +998,6 @@ const App = (): JSX.Element => {
         <div className="box">
             <div className="field">
                 <div className="buttons is-centered">
-                    <div className="file is-boxed">
-                        <label className="file-label">
-                            <input
-                                className="file-input"
-                                type="file"
-                                accept="image/*"
-                                multiple
-                                onChange={handleFileUpload}
-                            />
-                            <span className="file-cta">
-                                <span className="file-icon">
-                                    <i className="fas fa-upload" />
-                                </span>
-                                <span className="file-label">Choose photos...</span>
-                            </span>
-                        </label>
-                    </div>
                     {!isCameraActive ? (
                         <button
                             className="button is-primary"
@@ -802,30 +1013,24 @@ const App = (): JSX.Element => {
                             Close Camera
                         </button>
                     )}
+                    <div className="file is-boxed">
+                        <label className="file-label">
+                            <input
+                                className="file-input is-primary"
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                onChange={handleFileUpload}
+                            />
+                            <span className="file-cta">
+                                <span className="file-label">Upload photos...</span>
+                            </span>
+                        </label>
+                    </div>
+                    
                 </div>
-                <button
-                    className="button is-info"
-                    onClick={() => {
-                        copyCSV(scans);
-                        showNotification('Copied all scans as CSV to clipboard', 'success');
-                    }}
-                >
-                    Copy CSV ({scans.length})
-                </button>
-                <button
-                    className="button is-danger"
-                    onClick={() => {
-                        const result = confirm('Are you sure you want to clear all scans?');
-                        if (result) {
-                            clearScans();
-                            showNotification('Cleared all scans', 'success');
-                        }
-                    }}
-                >
-                    Clear Scans
-                </button>
             </div>
-            <PhotoList photos={photos} />
+            {/* <PhotoList photos={photos} />*/}
             <div className="notification-container">
                 {notifications.map(({ id, message, type }) => (
                     <Notification
@@ -841,36 +1046,131 @@ const App = (): JSX.Element => {
                 <table className="table is-striped is-fullwidth is-hoverable">
                     <thead>
                         <tr>
-                            <th>Created At</th>
+                            <th>Image</th>
                             <th>Fields</th>
-                            <th>OCR Text</th>
+                            <th>Results</th>
                         </tr>
                     </thead>
                     <tbody>
                         {scans.map(scan => (
                             <tr key={scan.id}>
-                                <td><a style={{width: '5rem', height: '3rem'}} href={scan.image} target="_blank" rel="noopener noreferrer"><img src={scan.image} alt="Scanned" /></a></td>
-                                <td>{new Date(scan.createdAt).toLocaleString()}
-                                    <ul>
-                                <li>ID:{scan.fields.id}</li>
-                                <li>NAME:{scan.fields.name}</li>
-                                <li>DOR:{scan.fields.dor}</li>
-                                <li>ISSUE:{scan.fields.issue}</li>
-                                <li>VALID:{scan.fields.valid}</li>
-                                <li>SPOUSE/PARTNER:{scan.fields.spousePartner}</li>
-                                <li>OTHER:{scan.fields.other.join('; ')}</li>
-                                
-                                </ul>
+                                <td>
+                                    <a style={{width: '5rem', height: '3rem'}} href={scan.image} target="_blank" rel="noopener noreferrer">
+                                        <img src={scan.image} alt="Scanned" />
+                                    </a>
+                                    
                                 </td>
-                                <td><ScanDetails ocrText={scan.ocrText} fullScanDetails={scan.fullScanDetails} /></td>
+                                <td>{new Date(scan.createdAt).toLocaleString()}
+                                    <div className="box p-2">
+                                        <div className="columns is-multiline is-mobile is-gapless">
+                                            <div className="column is-6">
+                                                <div className="field has-addons mb-1">
+                                                    <div className="control is-narrow">
+                                                        <span className="button is-static is-small py-1 px-2 has-text-italic" style={{ minWidth: '60px' }}>ID</span>
+                                                    </div>
+                                                    <div className="control is-expanded">
+                                                        <div className="input is-static is-small py-1 has-text-weight-bold">{scan.fields.id}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="column is-6">
+                                                <div className="field has-addons mb-1">
+                                                    <div className="control is-narrow">
+                                                        <span className="button is-static is-small py-1 px-2 has-text-italic" style={{ minWidth: '60px' }}>Name</span>
+                                                    </div>
+                                                    <div className="control is-expanded">
+                                                        <div className="input is-static is-small py-1 has-text-weight-bold">{scan.fields.name}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="column is-6">
+                                                <div className="field has-addons mb-1">
+                                                    <div className="control is-narrow">
+                                                        <span className="button is-static is-small py-1 px-2 has-text-italic" style={{ minWidth: '60px' }}>DOR</span>
+                                                    </div>
+                                                    <div className="control is-expanded">
+                                                        <div className="input is-static is-small py-1 has-text-weight-bold">{scan.fields.dor}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="column is-6">
+                                                <div className="field has-addons mb-1">
+                                                    <div className="control is-narrow">
+                                                        <span className="button is-static is-small py-1 px-2 has-text-italic" style={{ minWidth: '60px' }}>Issue</span>
+                                                    </div>
+                                                    <div className="control is-expanded">
+                                                        <div className="input is-static is-small py-1 has-text-weight-bold">{scan.fields.issue}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="column is-6">
+                                                <div className="field has-addons mb-1">
+                                                    <div className="control is-narrow">
+                                                        <span className="button is-static is-small py-1 px-2 has-text-italic" style={{ minWidth: '60px' }}>Valid</span>
+                                                    </div>
+                                                    <div className="control is-expanded">
+                                                        <div className="input is-static is-small py-1 has-text-weight-bold">{scan.fields.valid}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="column is-6">
+                                                <div className="field has-addons mb-1">
+                                                    <div className="control is-narrow">
+                                                        <span className="button is-static is-small py-1 px-2 has-text-italic" style={{ minWidth: '60px' }}>Partner</span>
+                                                    </div>
+                                                    <div className="control is-expanded">
+                                                        <div className="input is-static is-small py-1 has-text-weight-bold">{scan.fields.spousePartner}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {scan.fields.other && (
+                                                <div className="column is-12">
+                                                    <div className="field has-addons mb-1">
+                                                        <div className="control is-narrow">
+                                                            <span className="button is-static is-small py-1 px-2 has-text-italic" style={{ minWidth: '60px' }}>Other</span>
+                                                        </div>
+                                                        <div className="control is-expanded">
+                                                            <div className="input is-static is-small py-1 has-text-weight-bold">{scan.fields.other}</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><ScanDetails scan={scan} /></td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
             </div>
 
+            <div className="buttons is-centered">
+            <button
+                    className="button is-info"
+                    onClick={() => {
+                        copyCSV(scans);
+                        showNotification('Copied all scans as CSV to clipboard', 'success');
+                    }}
+                >
+                    Copy ({scans.length}) CSV 
+                </button>
+                <button
+                    className="button is-danger"
+                    onClick={() => {
+                        const result = confirm('Are you sure you want to clear all scans?');
+                        if (result) {
+                            clearScans();
+                            showNotification('Cleared all scans', 'success');
+                        }
+                    }}
+                >
+                    Clear Scans
+                </button>
+            </div>
             <div className="field">
                     <label className="label">Scan Mode</label>
+                    <p className="text-sm i">(Configure the different 'modes' used to process the image)</p>
                     <div className="control">
                         <div className="select is-fullwidth">
                             <select 

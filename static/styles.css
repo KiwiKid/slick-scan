@@ -197,6 +197,20 @@ slick-scan {
     margin: 0;
 }
 
+.file.is-boxed .file-cta {
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.file.is-boxed .file-cta:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.file.is-boxed .file-label {
+    font-weight: 500;
+}
+
 .camera-overlay {
     position: absolute;
     top: 0;

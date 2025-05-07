@@ -1,5 +1,5 @@
 import { describe, it, expect } from '@jest/globals';
-import { extractFields } from '../index.js';
+import { extractFields, extractFieldsV2 } from '../index.js';
 
 describe('extractFields', () => {
   it('should extract all fields from a valid licence text', () => {
@@ -16,17 +16,21 @@ describe('extractFields', () => {
     `;
 
     const expected = {
-      type: 'family_season_licence',
-      id: '',
-      name: 'John Smith',
-      dor: '01/01/1990',
-      issue: '01/01/2024',
-      valid: '01/01/2025',
-      spousePartner: 'Jane Smith',
-      other: ['Child 1', 'Child 2']
+      fields: {
+        type: 'family_season_licence',
+        id: '',
+        name: 'John Smith',
+        dor: '01/01/1990',
+        issue: '01/01/2024',
+        valid: '01/01/2025',
+        spousePartner: 'Jane Smith',
+        other: 'Child 1, Child 2',
+        createdAt: expect.any(Number)
+      },
+      matches: expect.any(Object)
     };
 
-    expect(extractFields(input)).toEqual(expected);
+    expect(extractFieldsV2(input)).toEqual(expected);
   });
 
   it('should handle missing fields gracefully', () => {
@@ -37,44 +41,52 @@ describe('extractFields', () => {
     `;
 
     const expected = {
-      type: 'family_season_licence',
-      id: '',
-      name: 'John Smith',
-      dor: '01/01/1990',
-      issue: '',
-      valid: '',
-      spousePartner: '',
-      other: []
+      fields: {
+        type: 'family_season_licence',
+        id: '',
+        name: 'John Smith',
+        dor: '01/01/1990',
+        issue: '',
+        valid: '',
+        spousePartner: '',
+        other: '',
+        createdAt: expect.any(Number)
+      },
+      matches: expect.any(Object)
     };
 
-    expect(extractFields(input)).toEqual(expected);
+    expect(extractFieldsV2(input)).toEqual(expected);
   });
 
   it('should extract licence ID when present', () => {
     const input = `
-      ID: 12345678
+      12345678
       NAME John Smith
       DOR 01/01/1990
       Licence
     `;
 
-    const result = extractFields(input);
-    expect(result.id).toBe('12345678');
+    const result = extractFieldsV2(input);
+    expect(result.fields.id).toBe('12345678');
   });
 
   it('should handle empty input', () => {
     const expected = {
-      type: 'family_season_licence',
-      id: '',
-      name: '',
-      dor: '',
-      issue: '',
-      valid: '',
-      spousePartner: '',
-      other: []
+      fields: {
+        type: 'family_season_licence',
+        id: '',
+        name: '',
+        dor: '',
+        issue: '',
+        valid: '',
+        spousePartner: '',
+        other: '',
+        createdAt: expect.any(Number)
+      },
+      matches: expect.any(Object)
     };
 
-    expect(extractFields('')).toEqual(expected);
+    expect(extractFieldsV2('')).toEqual(expected);
   });
 
   it('should handle malformed input', () => {
@@ -89,16 +101,59 @@ describe('extractFields', () => {
     `;
 
     const expected = {
-      type: 'family_season_licence',
-      id: '',
-      name: '',
-      dor: '',
-      issue: '',
-      valid: '',
-      spousePartner: '',
-      other: []
+      fields: {
+        type: 'family_season_licence',
+        id: '',
+        name: '',
+        dor: '',
+        issue: '',
+        valid: '',
+        spousePartner: '',
+        other: '',
+        createdAt: expect.any(Number)
+      },
+      matches: expect.any(Object)
     };
 
-    expect(extractFields(input)).toEqual(expected);
+    expect(extractFieldsV2(input)).toEqual(expected);
+  });
+
+  it('should handle multiple children', () => {
+    const input = `
+      FAMILY SEASON LICENCE
+
+      wae
+      Jason Van Beers 6486549
+      01/01/1982 22/08/2024 01/10/2024 - 30/09/2025
+      srouserasmen 165 Keen Road
+
+      Becky Talbot-Van Beers Rd 21, Geraldine 7991
+
+      Mack Rangatira
+
+      Jock Tarahaoa
+
+      cance ust be cried vie sing and fs not va or Taupo Fishing district, Only the Primary
+      Comin Wan can we 1 1h Independant.
+
+      ets amin Ager ESL. Managing Director A/C
+    `;
+
+    const expected = {
+      fields: {
+        type: 'family_season_licence',
+        id: '6486549',
+        name: 'Jason Van Beers',
+        dor: '01/01/1982',
+        issue: '22/08/2024',
+        valid: '01/10/2024 - 30/09/2025',
+        spousePartner: 'Becky Talbot-Van Beers',
+        other: 'Mack Rangatira, Jock Tarahaoa',
+        createdAt: expect.any(Number)
+      },
+      matches: expect.any(Object)
+    };
+
+    expect(extractFieldsV2(input)).toEqual(expected);
   });
 }); 

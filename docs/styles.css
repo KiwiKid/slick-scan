@@ -205,8 +205,42 @@ body {
 
 .file.is-boxed {
     margin: 0;
-} 
+}
 
+.file.is-boxed .file-cta {
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    padding: 0 1.2rem;
+    height: 40px;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    box-sizing: border-box;
+}
+
+.file.is-boxed .file-cta:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.file.is-boxed .file-icon {
+    display: flex;
+    align-items: center;
+    height: 20px;
+    font-size: 1.1em;
+}
+
+.file.is-boxed .file-label {
+    display: block;
+    font-weight: 500;
+    font-size: 0.98rem;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+    line-height: 1.2;
+}
 
 .camera-overlay {
     position: absolute;
