@@ -439,11 +439,14 @@ const App = (): JSX.Element => {
     const COMPRESSED_WIDTH = 800;
     const JPEG_QUALITY = 0.6;
 
-    const showNotification = useCallback((message: string, type: 'success' | 'warning' | 'danger' | 'info' = 'info') => {
+    const showNotification = useCallback((message: string, type: 'success' | 'warning' | 'danger' | 'info' = 'info', onClick?: () => void) => {
         const id = Date.now().toString();
-        setNotifications(prev => [...prev, { id, message, type }]);
+        setNotifications(prev => [...prev, { id, message, type, onClick }]);
         setTimeout(() => {
             setNotifications(prev => prev.filter(n => n.id !== id));
+            if (onClick) {
+                onClick();
+            }
         }, 3000);
     }, []);
 
@@ -504,7 +507,15 @@ const App = (): JSX.Element => {
                 matches,
                 createdAt: Date.now(),
             });
-            showNotification('Image processed successfully', 'success');
+            showNotification('Image processed successfully', 'success', () => {
+                const scanElement = document.querySelector(`#scan-${photo.id}`);
+                if (scanElement) {
+                    scanElement.scrollIntoView({ behavior: 'smooth' });
+                }else {
+                    console.warn('No scan element found for photo: - not scrolling to it', photo.id);
+                }
+            });
+
         } catch (error) {
             setPhotos(prev => prev.map(p =>
                 p.id === photo.id ? { ...p, status: 'error' as const } : p
@@ -670,8 +681,8 @@ const App = (): JSX.Element => {
     }, [isProcessing, photos, processQueue]);
 
     return (
-        <div className="box">
-            
+        
+            <div>
             {isCameraActive && (
                 <div className="camera-container">
                     <video
@@ -695,6 +706,7 @@ const App = (): JSX.Element => {
                     </button>
                 </div>
             )}
+        <div className="box">
             <div className="field">
                 <div className="buttons is-centered">
                     <div className="file is-boxed">
@@ -812,6 +824,7 @@ const App = (): JSX.Element => {
                         </div>
                     </div>
                 </div>
+            </div>
         </div>
     );
 };

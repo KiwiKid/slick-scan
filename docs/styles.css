@@ -94,8 +94,8 @@ body {
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: 1000;
-    max-width: 90%;
-    width: 500px;
+    max-width: 95%;
+    width: 800px;
 }
 
 .camera-preview .box {
@@ -130,7 +130,7 @@ body {
     overflow: visible;
     aspect-ratio: 16/9;
     height: auto;
-    max-height: none;
+    max-height: 80vh;
 }
 
 .camera-container video {
