@@ -613,7 +613,7 @@ const SummaryDetails = (obj: any) => {
 const ScanDetails: React.FC<ScanDetailsProps> = ({ scan }) => {
     return (
         <div className="scan-details">
-            <div className="mt-2">
+            <div className="mt-2 is-centered">
                 {scan.status === 'processing' && (
                                     <progress className="progress is-small is-primary mt-1" max={100}>
                                         Processing...
@@ -624,14 +624,12 @@ const ScanDetails: React.FC<ScanDetailsProps> = ({ scan }) => {
                                     scan.status === 'error' ? 'is-danger' : 'is-warning'}`}>
                     {scan.status || 'completed'}
                 </span>
-            </div>
-            <div className="mt-2">
             <button
-            className="button is-info m-2"
+            className="button is-small is-info m-2"
             onClick={() => {
                copyCSV([scan]);
             }}>Copy CSV</button>
-            <button className="button is-info m-2" onClick={() => {
+            <button className="button is-small is-info m-2" onClick={() => {
                 navigator.clipboard.writeText(scan.ocrText);
             }}>Copy OCR Text</button>
             <details>
@@ -1043,106 +1041,206 @@ const App = (): JSX.Element => {
             </div>
             {/* Bulma Table of Scans */}
             <div className="table-container" style={{ marginTop: '2rem' }}>
-                <table className="table is-striped is-fullwidth is-hoverable">
-                    <thead>
-                        <tr>
-                            <th>Image</th>
-                            <th>Fields</th>
-                            <th>Results</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {scans.map(scan => (
-                            <tr key={scan.id}>
-                                <td>
-                                    <a style={{width: '5rem', height: '3rem'}} href={scan.image} target="_blank" rel="noopener noreferrer">
-                                        <img src={scan.image} alt="Scanned" />
-                                    </a>
-                                    
-                                </td>
-                                <td>{new Date(scan.createdAt).toLocaleString()}
-                                    <div className="box p-2">
-                                        <div className="columns is-multiline is-mobile is-gapless">
-                                            <div className="column is-12-mobile is-6-tablet">
-                                                <div className="field has-addons mb-1">
-                                                    <div className="control is-narrow">
-                                                        <span className="button is-static is-small py-1 px-2 has-text-italic" style={{ minWidth: '60px', fontSize: '0.75rem' }}>ID</span>
-                                                    </div>
-                                                    <div className="control is-expanded">
-                                                        <div className="input is-static is-small py-1 has-text-weight-bold" style={{ fontSize: '0.75rem' }}>{scan.fields.id}</div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="column is-12-mobile is-6-tablet">
-                                                <div className="field has-addons mb-1">
-                                                    <div className="control is-narrow">
-                                                        <span className="button is-static is-small py-1 px-2 has-text-italic" style={{ minWidth: '60px', fontSize: '0.75rem' }}>Name</span>
-                                                    </div>
-                                                    <div className="control is-expanded">
-                                                        <div className="input is-static is-small py-1 has-text-weight-bold" style={{ fontSize: '0.75rem' }}>{scan.fields.name}</div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="column is-12-mobile is-6-tablet">
-                                                <div className="field has-addons mb-1">
-                                                    <div className="control is-narrow">
-                                                        <span className="button is-static is-small py-1 px-2 has-text-italic" style={{ minWidth: '60px', fontSize: '0.75rem' }}>DOR</span>
-                                                    </div>
-                                                    <div className="control is-expanded">
-                                                        <div className="input is-static is-small py-1 has-text-weight-bold" style={{ fontSize: '0.75rem' }}>{scan.fields.dor}</div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="column is-12-mobile is-6-tablet">
-                                                <div className="field has-addons mb-1">
-                                                    <div className="control is-narrow">
-                                                        <span className="button is-static is-small py-1 px-2 has-text-italic" style={{ minWidth: '60px', fontSize: '0.75rem' }}>Issue</span>
-                                                    </div>
-                                                    <div className="control is-expanded">
-                                                        <div className="input is-static is-small py-1 has-text-weight-bold" style={{ fontSize: '0.75rem' }}>{scan.fields.issue}</div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="column is-12-mobile is-6-tablet">
-                                                <div className="field has-addons mb-1">
-                                                    <div className="control is-narrow">
-                                                        <span className="button is-static is-small py-1 px-2 has-text-italic" style={{ minWidth: '60px', fontSize: '0.75rem' }}>Valid</span>
-                                                    </div>
-                                                    <div className="control is-expanded">
-                                                        <div className="input is-static is-small py-1 has-text-weight-bold" style={{ fontSize: '0.75rem' }}>{scan.fields.valid}</div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="column is-12-mobile is-6-tablet">
-                                                <div className="field has-addons mb-1">
-                                                    <div className="control is-narrow">
-                                                        <span className="button is-static is-small py-1 px-2 has-text-italic" style={{ minWidth: '60px', fontSize: '0.75rem' }}>Partner</span>
-                                                    </div>
-                                                    <div className="control is-expanded">
-                                                        <div className="input is-static is-small py-1 has-text-weight-bold" style={{ fontSize: '0.75rem' }}>{scan.fields.spousePartner}</div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            {scan.fields.other && (
-                                                <div className="column is-12">
+                <div className="is-hidden-mobile">
+                    <table className="table is-striped is-fullwidth is-hoverable">
+                        <thead>
+                            <tr>
+                                <th>Image</th>
+                                <th>Fields</th>
+                                <th>Results</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {scans.map(scan => (
+                                <tr key={scan.id}>
+                                    <td>
+                                        <a style={{width: '5rem', height: '3rem'}} href={scan.image} target="_blank" rel="noopener noreferrer">
+                                            <img src={scan.image} alt="Scanned" />
+                                        </a>
+                                    </td>
+                                    <td>{new Date(scan.createdAt).toLocaleString()}
+                                        <div className="box p-2">
+                                            <div className="columns is-multiline is-mobile is-gapless">
+                                                <div className="column is-12-mobile is-6-tablet">
                                                     <div className="field has-addons mb-1">
                                                         <div className="control is-narrow">
-                                                            <span className="button is-static is-small py-1 px-2 has-text-italic" style={{ minWidth: '60px', fontSize: '0.75rem' }}>Other</span>
+                                                            <span className="button is-static is-small py-1 px-2 has-text-italic" style={{ minWidth: '60px', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>ID</span>
                                                         </div>
                                                         <div className="control is-expanded">
-                                                            <div className="input is-static is-small py-1 has-text-weight-bold" style={{ fontSize: '0.75rem' }}>{scan.fields.other}</div>
+                                                            <div className="input is-static is-small py-1 has-text-weight-bold" style={{ fontSize: '0.75rem', overflow: 'hidden', textOverflow: 'ellipsis' }}>{scan.fields.id}</div>
                                                         </div>
                                                     </div>
                                                 </div>
-                                            )}
+                                                <div className="column is-12-mobile is-6-tablet">
+                                                    <div className="field has-addons mb-1">
+                                                        <div className="control is-narrow">
+                                                            <span className="button is-static is-small py-1 px-2 has-text-italic" style={{ minWidth: '60px', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>Name</span>
+                                                        </div>
+                                                        <div className="control is-expanded">
+                                                            <div className="input is-static is-small py-1 has-text-weight-bold" style={{ fontSize: '0.75rem', overflow: 'hidden', textOverflow: 'ellipsis' }}>{scan.fields.name}</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="column is-12-mobile is-6-tablet">
+                                                    <div className="field has-addons mb-1">
+                                                        <div className="control is-narrow">
+                                                            <span className="button is-static is-small py-1 px-2 has-text-italic" style={{ minWidth: '60px', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>DOR</span>
+                                                        </div>
+                                                        <div className="control is-expanded">
+                                                            <div className="input is-static is-small py-1 has-text-weight-bold" style={{ fontSize: '0.75rem', overflow: 'hidden', textOverflow: 'ellipsis' }}>{scan.fields.dor}</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="column is-12-mobile is-6-tablet">
+                                                    <div className="field has-addons mb-1">
+                                                        <div className="control is-narrow">
+                                                            <span className="button is-static is-small py-1 px-2 has-text-italic" style={{ minWidth: '60px', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>Issue</span>
+                                                        </div>
+                                                        <div className="control is-expanded">
+                                                            <div className="input is-static is-small py-1 has-text-weight-bold" style={{ fontSize: '0.75rem', overflow: 'hidden', textOverflow: 'ellipsis' }}>{scan.fields.issue}</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="column is-12-mobile is-6-tablet">
+                                                    <div className="field has-addons mb-1">
+                                                        <div className="control is-narrow">
+                                                            <span className="button is-static is-small py-1 px-2 has-text-italic" style={{ minWidth: '60px', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>Valid</span>
+                                                        </div>
+                                                        <div className="control is-expanded">
+                                                            <div className="input is-static is-small py-1 has-text-weight-bold" style={{ fontSize: '0.75rem', overflow: 'hidden', textOverflow: 'ellipsis' }}>{scan.fields.valid}</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="column is-12-mobile is-6-tablet">
+                                                    <div className="field has-addons mb-1">
+                                                        <div className="control is-narrow">
+                                                            <span className="button is-static is-small py-1 px-2 has-text-italic" style={{ minWidth: '60px', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>Partner</span>
+                                                        </div>
+                                                        <div className="control is-expanded">
+                                                            <div className="input is-static is-small py-1 has-text-weight-bold" style={{ fontSize: '0.75rem', overflow: 'hidden', textOverflow: 'ellipsis' }}>{scan.fields.spousePartner}</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                {scan.fields.other && (
+                                                    <div className="column is-12">
+                                                        <div className="field has-addons mb-1">
+                                                            <div className="control is-narrow">
+                                                                <span className="button is-static is-small py-1 px-2 has-text-italic" style={{ minWidth: '60px', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>Other</span>
+                                                            </div>
+                                                            <div className="control is-expanded">
+                                                                <div className="input is-static is-small py-1 has-text-weight-bold" style={{ fontSize: '0.75rem', overflow: 'hidden', textOverflow: 'ellipsis' }}>{scan.fields.other}</div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><ScanDetails scan={scan} /></td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+                <div className="is-hidden-tablet">
+                    <div className="columns is-multiline is-gapless">
+                        {scans.map(scan => (
+                            <div key={scan.id} className="column is-12 mb-4 px-2">
+                                <div className="box p-2">
+                                    <div className="columns is-mobile is-multiline is-gapless">
+                                        <div className="column is-12 mb-2">
+                                            <a href={scan.image} target="_blank" rel="noopener noreferrer">
+                                                <img src={scan.image} alt="Scanned" style={{ width: '100%', height: 'auto', maxHeight: '200px', objectFit: 'contain' }} />
+                                            </a>
+                                        </div>
+                                        <div className="column is-12">
+                                            <div className="content">
+                                                <p className="is-size-7 has-text-grey mb-2">{new Date(scan.createdAt).toLocaleString()}</p>
+                                                <div className="box p-2">
+                                                    <div className="columns is-multiline is-mobile is-gapless">
+                                                        <div className="column is-12-mobile is-6-tablet">
+                                                            <div className="field has-addons mb-1">
+                                                                <div className="control is-narrow">
+                                                                    <span className="button is-static is-small py-1 px-2 has-text-italic" style={{ minWidth: '60px', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>ID</span>
+                                                                </div>
+                                                                <div className="control is-expanded">
+                                                                    <div className="input is-static is-small py-1 has-text-weight-bold" style={{ fontSize: '0.75rem', overflow: 'hidden', textOverflow: 'ellipsis' }}>{scan.fields.id}</div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div className="column is-12-mobile is-6-tablet">
+                                                            <div className="field has-addons mb-1">
+                                                                <div className="control is-narrow">
+                                                                    <span className="button is-static is-small py-1 px-2 has-text-italic" style={{ minWidth: '60px', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>Name</span>
+                                                                </div>
+                                                                <div className="control is-expanded">
+                                                                    <div className="input is-static is-small py-1 has-text-weight-bold" style={{ fontSize: '0.75rem', overflow: 'hidden', textOverflow: 'ellipsis' }}>{scan.fields.name}</div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div className="column is-12-mobile is-6-tablet">
+                                                            <div className="field has-addons mb-1">
+                                                                <div className="control is-narrow">
+                                                                    <span className="button is-static is-small py-1 px-2 has-text-italic" style={{ minWidth: '60px', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>DOR</span>
+                                                                </div>
+                                                                <div className="control is-expanded">
+                                                                    <div className="input is-static is-small py-1 has-text-weight-bold" style={{ fontSize: '0.75rem', overflow: 'hidden', textOverflow: 'ellipsis' }}>{scan.fields.dor}</div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div className="column is-12-mobile is-6-tablet">
+                                                            <div className="field has-addons mb-1">
+                                                                <div className="control is-narrow">
+                                                                    <span className="button is-static is-small py-1 px-2 has-text-italic" style={{ minWidth: '60px', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>Issue</span>
+                                                                </div>
+                                                                <div className="control is-expanded">
+                                                                    <div className="input is-static is-small py-1 has-text-weight-bold" style={{ fontSize: '0.75rem', overflow: 'hidden', textOverflow: 'ellipsis' }}>{scan.fields.issue}</div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div className="column is-12-mobile is-6-tablet">
+                                                            <div className="field has-addons mb-1">
+                                                                <div className="control is-narrow">
+                                                                    <span className="button is-static is-small py-1 px-2 has-text-italic" style={{ minWidth: '60px', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>Valid</span>
+                                                                </div>
+                                                                <div className="control is-expanded">
+                                                                    <div className="input is-static is-small py-1 has-text-weight-bold" style={{ fontSize: '0.75rem', overflow: 'hidden', textOverflow: 'ellipsis' }}>{scan.fields.valid}</div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div className="column is-12-mobile is-6-tablet">
+                                                            <div className="field has-addons mb-1">
+                                                                <div className="control is-narrow">
+                                                                    <span className="button is-static is-small py-1 px-2 has-text-italic" style={{ minWidth: '60px', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>Partner</span>
+                                                                </div>
+                                                                <div className="control is-expanded">
+                                                                    <div className="input is-static is-small py-1 has-text-weight-bold" style={{ fontSize: '0.75rem', overflow: 'hidden', textOverflow: 'ellipsis' }}>{scan.fields.spousePartner}</div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        {scan.fields.other && (
+                                                            <div className="column is-12">
+                                                                <div className="field has-addons mb-1">
+                                                                    <div className="control is-narrow">
+                                                                        <span className="button is-static is-small py-1 px-2 has-text-italic" style={{ minWidth: '60px', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>Other</span>
+                                                                    </div>
+                                                                    <div className="control is-expanded">
+                                                                        <div className="input is-static is-small py-1 has-text-weight-bold" style={{ fontSize: '0.75rem', overflow: 'hidden', textOverflow: 'ellipsis' }}>{scan.fields.other}</div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <ScanDetails scan={scan} />
+                                            </div>
                                         </div>
                                     </div>
-                                </td>
-                                <td><ScanDetails scan={scan} /></td>
-                            </tr>
+                                </div>
+                            </div>
                         ))}
-                    </tbody>
-                </table>
+                    </div>
+                </div>
             </div>
 
             <div className="buttons is-centered">
@@ -1168,24 +1266,29 @@ const App = (): JSX.Element => {
                     Clear Scans
                 </button>
             </div>
-            <div className="field">
-                    <label className="label">Scan Mode</label>
-                    <p className="text-sm i">(Configure the different 'modes' used to process the image)</p>
-                    <div className="control">
-                        <div className="select is-fullwidth">
-                            <select 
-                                value={selectedScanMode}
-                                onChange={(e) => setSelectedScanMode(e.target.value)}
-                            >
-                                {SCAN_MODES.map(mode => (
-                                    <option key={mode.id} value={mode.id}>
-                                        {mode.name} - {mode.description}
-                                    </option>
-                                ))}
-                            </select>
+            <details>
+                    <summary>Scan Configuration</summary>
+                <div className="field">
+                        <label className="label">Scan Mode</label>
+                        <p className="text-sm i">(Configure the different 'modes' used to process the image)</p>
+                        <div className="control">
+                            <div className="select is-fullwidth">
+                                <select 
+                                    value={selectedScanMode}
+                                    onChange={(e) => setSelectedScanMode(e.target.value)}
+                                >
+                                    {SCAN_MODES.map(mode => (
+                                        <option key={mode.id} value={mode.id}>
+                                            {mode.name} - {mode.description}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
                         </div>
                     </div>
-                </div>
+                
+
+            </details>
             </div>
         </div>
     );
