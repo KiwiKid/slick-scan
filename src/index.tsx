@@ -800,16 +800,13 @@ const App = (): JSX.Element => {
                     )}
                        
                             
-
-
-
-
                     <div className="is-flex is-flex-direction-column is-align-items-center gap-3">
                         <button
                             className="button is-small is-info"
                             style={{ borderRadius: '4px' }}
                             onClick={() => {
                                 copyCSV([scan]);
+                                showNotification(`Copied scan to clipboard - Paste into Excel`, 'success');
                             }}>
                             Copy Scan
                         </button>
@@ -872,7 +869,6 @@ const App = (): JSX.Element => {
         ].map(val => (val ?? '').toString().replace(/\t/g, ' ')).join('\t'));
         const csv = [header, ...rows].join('\n');
         navigator.clipboard.writeText(csv);
-        showNotification('Copied all scans as CSV to clipboard - Paste into Excel', 'success');
     };
 
     const compressImage = useCallback(async (dataUrl: string): Promise<string> => {
@@ -1145,7 +1141,7 @@ const App = (): JSX.Element => {
                 }
                 return updated;
             });
-            showNotification('Photo captured successfully', 'success');
+            console.log('Photo captured successfully')
         } catch (error) {
             console.error('Failed to process photo', error);
             showNotification('Failed to process photo', 'danger');
@@ -1492,7 +1488,7 @@ const App = (): JSX.Element => {
                                     className="button is-info"
                                     onClick={() => {
                                         copyCSV(Object.values(scans).flatMap(day => day.scans));
-                                        showNotification('Copied all scans as CSV to clipboard - Paste into Excel', 'success');
+                                        showNotification(`Copied ${Object.values(scans).reduce((acc, day) => acc + day.scans.length, 0) > 1 ? `all ${Object.values(scans).reduce((acc, day) => acc + day.scans.length, 0)} scans` : 'one scan'} as CSV to clipboard - Paste into Excel`, 'success');
                                     }}
                                 >
                                     Copy {Object.values(scans).reduce((acc, day) => acc + day.scans.length, 0)} Scans 
