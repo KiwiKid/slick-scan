@@ -129,9 +129,8 @@ slick-scan {
     display: block;
     transform: scaleX(-1); /* Mirror the preview for a more natural feel */
 }
-
+/*
 .camera-button {
-    position: absolute;
     bottom: 1rem;
     left: 50%;
     transform: translateX(-50%);
@@ -148,7 +147,7 @@ slick-scan {
     color: white;
     border: none;
     cursor: pointer;
-}
+}*/
 
 .camera-button:hover {
     transform: translateX(-50%) scale(1.05);

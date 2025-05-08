@@ -141,27 +141,26 @@ body {
 }
 
 .camera-button {
-    position: absolute;
+  /*  position: absolute;
     bottom: 1rem;
     left: 50%;
     transform: translateX(-50%);
     z-index: 10;
     border-radius: 50%;
-    width: 64px;
-    height: 64px;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    
+   
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
     background-color: #00d1b2;
     color: white;
-    border: none;
+    border: none;*/
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
     cursor: pointer;
 }
 
 .camera-button:hover {
-    transform: translateX(-50%) scale(1.05);
     background-color: #00c4a7;
 }
 
