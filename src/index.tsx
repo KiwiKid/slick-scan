@@ -855,7 +855,7 @@ const App = (): JSX.Element => {
 
 
 
-    const copyCSV = (scans: Scan[]) => {
+    const copyCSV = (scans: Scan[], includeHeader: boolean = false) => {
         const header = 'id\tname\tdor\tissue\tvalid\tspousePartner\tother\tcreatedAt';
         const rows = scans.map(scan => [
         scan.fields.id,
@@ -867,8 +867,14 @@ const App = (): JSX.Element => {
         scan.fields.other,
         scan.createdAt
         ].map(val => (val ?? '').toString().replace(/\t/g, ' ')).join('\t'));
-        const csv = [header, ...rows].join('\n');
+        let csv;
+        if(includeHeader){
+            csv = [header, ...rows].join('\n');
+        }else{
+            csv = rows.join('\n');
+        }
         navigator.clipboard.writeText(csv);
+
     };
 
     const compressImage = useCallback(async (dataUrl: string): Promise<string> => {
@@ -1487,7 +1493,7 @@ const App = (): JSX.Element => {
                                 <button
                                     className="button is-info"
                                     onClick={() => {
-                                        copyCSV(Object.values(scans).flatMap(day => day.scans));
+                                        copyCSV(Object.values(scans).flatMap(day => day.scans), true);
                                         showNotification(`Copied ${Object.values(scans).reduce((acc, day) => acc + day.scans.length, 0) > 1 ? `all ${Object.values(scans).reduce((acc, day) => acc + day.scans.length, 0)} scans` : 'one scan'} as CSV to clipboard - Paste into Excel`, 'success');
                                     }}
                                 >
