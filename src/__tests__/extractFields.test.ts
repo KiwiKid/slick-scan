@@ -1,5 +1,5 @@
 import { describe, it, expect } from '@jest/globals';
-import { extractFields, extractFieldsV2 } from '../index.js';
+import { extractFieldsV2 } from '../index.js';
 
 describe('extractFields', () => {
   it('should extract all fields from a valid licence text', () => {
@@ -27,7 +27,8 @@ describe('extractFields', () => {
         other: 'Child 1, Child 2',
         createdAt: expect.any(Number)
       },
-      matches: expect.any(Object)
+      matches: expect.any(Object),
+      success: true
     };
 
     expect(extractFieldsV2(input)).toEqual(expected);
@@ -52,7 +53,8 @@ describe('extractFields', () => {
         other: '',
         createdAt: expect.any(Number)
       },
-      matches: expect.any(Object)
+      matches: expect.any(Object),
+      success: false
     };
 
     expect(extractFieldsV2(input)).toEqual(expected);
@@ -83,7 +85,8 @@ describe('extractFields', () => {
         other: '',
         createdAt: expect.any(Number)
       },
-      matches: expect.any(Object)
+      matches: expect.any(Object),
+      success: false
     };
 
     expect(extractFieldsV2('')).toEqual(expected);
@@ -112,7 +115,8 @@ describe('extractFields', () => {
         other: '',
         createdAt: expect.any(Number)
       },
-      matches: expect.any(Object)
+      matches: expect.any(Object),
+      success: false
     };
 
     expect(extractFieldsV2(input)).toEqual(expected);
@@ -151,7 +155,52 @@ describe('extractFields', () => {
         other: 'Mack Rangatira, Jock Tarahaoa',
         createdAt: expect.any(Number)
       },
-      matches: expect.any(Object)
+      matches: expect.any(Object),
+      success: true
+    };
+
+    expect(extractFieldsV2(input)).toEqual(expected);
+  });
+
+  it('should handle different ordering of fields', () => {
+    const input = `
+      FAMILY SEASON LICENCE
+
+      6486549
+
+      NAME
+      Jason Van Beers 
+      01/01/1982 22/08/2024 01/10/2024 - 30/09/2025
+      srouserasmen 165 Keen Road
+
+      Becky Talbot-Van Beers Rd 21, Geraldine 7991
+
+      OTHER 
+
+      Mack Rangatira
+
+      Jock Tarahaoa
+
+      cance ust be cried vie sing and fs not va or Taupo Fishing district, Only the Primary
+      Comin Wan can we 1 1h Independant.
+
+      ets amin Ager ESL. Managing Director A/C
+    `;
+
+    const expected = {
+      fields: {
+        type: 'family_season_licence',
+        id: '6486549',
+        name: 'Jason Van Beers',
+        dor: '01/01/1982',
+        issue: '22/08/2024',
+        valid: '01/10/2024 - 30/09/2025',
+        spousePartner: 'Becky Talbot-Van Beers',
+        other: 'Mack Rangatira, Jock Tarahaoa',
+        createdAt: expect.any(Number)
+      },
+      matches: expect.any(Object),
+      success: true
     };
 
     expect(extractFieldsV2(input)).toEqual(expected);

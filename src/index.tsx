@@ -185,7 +185,7 @@ export function extractFieldsV2(text: string): { success: boolean; fields: Licen
     // Handle Name
     const nameMatch = line.match(/NAME[\s:]+([A-Za-z .-]+)(?:\n|$)/i) ||
                      line.match(/^([A-Za-z .-]+)\s+\d{6,8}$/);
-    if (nameMatch) {
+    if (nameMatch && !line.match(/^(NAME|DOR|ISSUE|VALID|SPOUSE\/PARTNER|OTHER|Licence)\s*$/i)) {
       matches.name.push({
         value: nameMatch[1]?.trim() ?? nameMatch[0],
         confidence: nameMatch[0].startsWith('NAME') ? 1.0 : 0.9,
@@ -193,6 +193,21 @@ export function extractFieldsV2(text: string): { success: boolean; fields: Licen
         pattern: 'name-pattern',
         position: lineNum
       });
+    }
+
+    // Check for name on next line after NAME label
+    if (line.match(/^NAME\s*$/i) && lineNum + 1 < lines.length) {
+      const nextLine = lines[lineNum + 1];
+      const nameOnNextLine = nextLine.match(/^([A-Za-z .-]+)(?:\s+\d{6,8})?$/);
+      if (nameOnNextLine && !nextLine.match(/^(NAME|DOR|ISSUE|VALID|SPOUSE\/PARTNER|OTHER|Licence)\s*$/i)) {
+        matches.name.push({
+          value: nameOnNextLine[1].trim(),
+          confidence: 0.95,
+          line: lineNum + 1,
+          pattern: 'name-next-line',
+          position: lineNum + 1
+        });
+      }
     }
 
     // Handle Spouse/Partner
@@ -251,32 +266,32 @@ export function extractFieldsV2(text: string): { success: boolean; fields: Licen
     if (dates) {
       // First check for a range pattern
       const rangeMatch = line.match(/(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})\s*[-–]\s*(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/);
+      let validValue = '';
+      
       if (rangeMatch) {
+        validValue = `${normalizeDate(rangeMatch[1])} - ${normalizeDate(rangeMatch[2])}`;
         matches.valid.push({
-          value: `${normalizeDate(rangeMatch[1])} - ${normalizeDate(rangeMatch[2])}`,
+          value: validValue,
           confidence: 0.95,
           line: lineNum,
           pattern: 'valid-range',
           position: lineNum
         });
         // Remove the range dates from the array
-        dates.splice(dates.indexOf(rangeMatch[1]), 1);
-        dates.splice(dates.indexOf(rangeMatch[2]), 1);
-      }
-      
-      // Handle remaining dates
-      if (dates.length > 0 && !line.match(/\b(?:DOR|ISSUE|VALID)\b/i)) {
-        // If we have exactly 3 dates in a line and they're not labeled
-        if (dates.length === 3) {
-          // First date is usually DOR (oldest)
-          const sortedDates = dates.map(d => ({ date: d, timestamp: new Date(normalizeDate(d)).getTime() }))
+        const rangeDates = [rangeMatch[1], rangeMatch[2]];
+        const remainingDates = dates.filter(d => !rangeDates.includes(d));
+        
+        // If we have exactly 2 remaining dates, they are likely DOR and ISSUE
+        if (remainingDates.length === 2) {
+          const sortedDates = remainingDates
+            .map(d => ({ date: d, timestamp: new Date(normalizeDate(d)).getTime() }))
             .sort((a, b) => a.timestamp - b.timestamp);
           
           matches.dor.push({
             value: normalizeDate(sortedDates[0].date),
             confidence: 0.9,
             line: lineNum,
-            pattern: 'dor-position-oldest',
+            pattern: 'dor-with-range',
             position: lineNum
           });
           
@@ -284,61 +299,139 @@ export function extractFieldsV2(text: string): { success: boolean; fields: Licen
             value: normalizeDate(sortedDates[1].date),
             confidence: 0.85,
             line: lineNum,
-            pattern: 'issue-position-middle',
+            pattern: 'issue-with-range',
             position: lineNum
           });
-          
-          // Only add the third date as valid if we haven't found a range pattern
-          if (!matches.valid.some(m => m.line === lineNum)) {
-            matches.valid.push({
-              value: normalizeDate(sortedDates[2].date),
-              confidence: 0.8,
-              line: lineNum,
-              pattern: 'valid-position-newest',
-              position: lineNum
-            });
-          }
-        } else if (dates.length === 1) {
-          // Single unlabeled date - check if it's near name or ID
-          const dateValue = normalizeDate(dates[0]);
-          const dateTimestamp = new Date(dateValue).getTime();
-          const now = Date.now();
-          const yearsDiff = (now - dateTimestamp) / (1000 * 60 * 60 * 24 * 365);
-          
-          if (yearsDiff > 18 && yearsDiff < 100) {
-            // Likely a DOR if it's a reasonable age
-            matches.dor.push({
-              value: dateValue,
-              confidence: 0.8,
-              line: lineNum,
-              pattern: 'dor-age-range',
-              position: lineNum
-            });
-          }
+        }
+      } else if (dates.length === 3) {
+        // If no range pattern but we have 3 dates, handle as before
+        const sortedDates = dates
+          .map(d => ({ date: d, timestamp: new Date(normalizeDate(d)).getTime() }))
+          .sort((a, b) => a.timestamp - b.timestamp);
+        
+        matches.dor.push({
+          value: normalizeDate(sortedDates[0].date),
+          confidence: 0.9,
+          line: lineNum,
+          pattern: 'dor-position-oldest',
+          position: lineNum
+        });
+        
+        matches.issue.push({
+          value: normalizeDate(sortedDates[1].date),
+          confidence: 0.85,
+          line: lineNum,
+          pattern: 'issue-position-middle',
+          position: lineNum
+        });
+        
+        if (!validValue) {
+          matches.valid.push({
+            value: normalizeDate(sortedDates[2].date),
+            confidence: 0.8,
+            line: lineNum,
+            pattern: 'valid-position-newest',
+            position: lineNum
+          });
+        }
+      } else if (dates.length === 1) {
+        // Single unlabeled date - check if it's near name or ID
+        const dateValue = normalizeDate(dates[0]);
+        const dateTimestamp = new Date(dateValue).getTime();
+        const now = Date.now();
+        const yearsDiff = (now - dateTimestamp) / (1000 * 60 * 60 * 24 * 365);
+        
+        if (yearsDiff > 18 && yearsDiff < 100) {
+          // Likely a DOR if it's a reasonable age
+          matches.dor.push({
+            value: dateValue,
+            confidence: 0.8,
+            line: lineNum,
+            pattern: 'dor-age-range',
+            position: lineNum
+          });
         }
       }
     }
   });
 
   // Handle other fields (children)
-  const otherMatches = lines
-    .filter(line => 
+  let inOtherSection = false;
+  const otherLines: string[] = [];
+  let foundSpousePartner = false;
+  let foundOtherSection = false;
+  
+  console.log('Input text:', text);
+  console.log('Split lines:', lines);
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    console.log(`Line ${i}: "${line}"`);
+    
+    if (line.match(/^OTHER\s*$/i)) {
+      console.log('Found OTHER section');
+      inOtherSection = true;
+      foundOtherSection = true;
+      // Look ahead for children names until we hit Licence or another section
+      let j = i + 1;
+      while (j < lines.length) {
+        const nextLine = lines[j].trim();
+        console.log(`  Checking next line ${j}: "${nextLine}"`);
+        if (nextLine.match(/^(NAME|DOR|ISSUE|VALID|SPOUSE\/PARTNER|OTHER|Licence|FAMILY SEASON LICENCE)\s*$/i)) {
+          console.log('  Found section end');
+          break;
+        }
+        // If it's a simple name (letters, spaces, hyphens, and numbers)
+        if (nextLine.length > 0 && 
+            /^[A-Za-z][A-Za-z\s\d-]*[A-Za-z\d]$/.test(nextLine) && // Must start with a letter, can end with letter or number
+            !nextLine.match(/^(NAME|DOR|ISSUE|VALID|SPOUSE\/PARTNER|OTHER|Licence|FAMILY SEASON LICENCE|wae|srouserasmen|cance|Comin|ets)\b/i) && // Not a section header
+            !matches.name.some(m => m.value === nextLine) && // Don't include the main name
+            !matches.spousePartner.some(m => m.value === nextLine) // Don't include spouse/partner
+        ) {
+          console.log('  Found child name:', nextLine);
+          otherLines.push(nextLine);
+        } else {
+          console.log('  Line did not match child name pattern:', nextLine);
+          console.log('    Length > 0:', nextLine.length > 0);
+          console.log('    Name pattern:', /^[A-Za-z][A-Za-z\s\d-]*[A-Za-z\d]$/.test(nextLine));
+          console.log('    Not section header:', !nextLine.match(/^(NAME|DOR|ISSUE|VALID|SPOUSE\/PARTNER|OTHER|Licence|FAMILY SEASON LICENCE|wae|srouserasmen|cance|Comin|ets)\b/i));
+          console.log('    Not main name:', !matches.name.some(m => m.value === nextLine));
+          console.log('    Not spouse/partner:', !matches.spousePartner.some(m => m.value === nextLine));
+        }
+        j++;
+      }
+      i = j - 1; // Skip processed lines
+    } else if (line.match(/^SPOUSE\/PARTNER/i) || matches.spousePartner.some(m => m.line === i)) {
+      foundSpousePartner = true;
+    } else if (!foundOtherSection && foundSpousePartner && 
       !/^(NAME|DOR|ISSUE|VALID|SPOUSE\/PARTNER|OTHER|Licence|FAMILY SEASON LICENCE|wae|srouserasmen|cance|Comin|ets)\b/i.test(line) &&
       !/\d{6,8}/.test(line) &&
       !/\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/.test(line) &&
       !/(?:\s+Rd|\s+Street|\s+Avenue|\s+Road)/i.test(line) &&
-      line.trim().length > 0 &&
-      /^[A-Za-z][A-Za-z\s-]+$/.test(line.trim()) // Must be a name-like string
-    )
-    .map((line, index) => ({
-      value: line.trim(),
-      confidence: 0.8,
-      line: index,
-      pattern: 'other-content',
-      position: index
-    }));
+      line.length > 0 &&
+      /^[A-Za-z][A-Za-z\s\d-]*[A-Za-z\d]$/.test(line) && // Must start with a letter, can end with letter or number
+      !matches.name.some(m => m.value === line) && // Don't include the main name
+      !matches.spousePartner.some(m => m.value === line) // Don't include spouse/partner
+    ) {
+      otherLines.push(line);
+    }
+  }
 
-  matches.other.push(...otherMatches);
+  console.log('Found other lines:', otherLines);
+
+  if (otherLines.length > 0) {
+    matches.other.push({
+      value: otherLines.join(', '),
+      confidence: foundOtherSection ? 1.0 : 0.8,
+      line: foundOtherSection ? 
+        lines.findIndex(l => l.trim().match(/^OTHER\s*$/i)) :
+        lines.findIndex(l => l.trim() === otherLines[0]),
+      pattern: foundOtherSection ? 'other-section' : 'other-implicit',
+      position: foundOtherSection ? 
+        lines.findIndex(l => l.trim().match(/^OTHER\s*$/i)) :
+        lines.findIndex(l => l.trim() === otherLines[0])
+    });
+  }
 
   // Get best matches by confidence
   const bestMatches = {
@@ -356,7 +449,7 @@ export function extractFieldsV2(text: string): { success: boolean; fields: Licen
   };
 
   return {
-    success: bestMatches.id !== '' && bestMatches.name !== '' && bestMatches.dor !== '' && bestMatches.issue !== '' && bestMatches.valid !== '',
+    success: bestMatches.name !== '' && bestMatches.dor !== '' && bestMatches.issue !== '' && bestMatches.valid !== '',
     fields: {
       type: 'family_season_licence',
       ...bestMatches,
