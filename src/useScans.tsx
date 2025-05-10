@@ -789,7 +789,7 @@ export function useScans(props: UseScansProps) {
         const width = rotatedRect.size.width;
         const height = rotatedRect.size.height;
         if (width < height) {
-          angle -= 90;
+        //  angle -= 90;
         }
         const originalAngle = angle;
         angle = Math.max(-30, Math.min(30, angle));
@@ -846,11 +846,11 @@ export function useScans(props: UseScansProps) {
           }
           let src = cv.imread(canvas);
           // Deskew the image
-          let deskewed = deskewImage(src);
+         // let deskewed = deskewImage(src);
           let gray = new cv.Mat();
           let bin = new cv.Mat();
           // Convert to grayscale
-          cv.cvtColor(deskewed, gray, cv.COLOR_RGBA2GRAY, 0);
+          cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
           // Adaptive threshold (binarization)
           cv.adaptiveThreshold(
             gray, bin, 255,
@@ -861,7 +861,7 @@ export function useScans(props: UseScansProps) {
           // Show result on canvas and export
           cv.imshow(canvas, bin);
           // Clean up
-          src.delete(); deskewed.delete(); gray.delete(); bin.delete();
+          src.delete(); src.delete(); gray.delete(); bin.delete();
           resolve(canvas.toDataURL('image/png'));
         };
         img.src = imageDataUrl;
