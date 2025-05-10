@@ -6,6 +6,8 @@ import { createWorker, PSM } from 'tesseract.js';
 import Webcam from 'react-webcam';
 
 
+let VERSION = "0.3"
+
 interface FieldMatch {
   value: string;
   confidence: number;
@@ -501,6 +503,8 @@ export function useScans(props: UseScansProps) {
               console.error('Failed to initialize OCR engine', error);
               props?.showNotification('Failed to initialize OCR engine', 'danger');
           }
+
+          props.showNotification(`slick-scan ${VERSION}`)
       };
       void initWorker();
   }, []);
