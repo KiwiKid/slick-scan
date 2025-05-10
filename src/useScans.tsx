@@ -1002,6 +1002,7 @@ export function useScans(props: UseScansProps) {
         canvas.width = video.videoHeight;
         canvas.height = video.videoWidth;
         if (ctx) {
+          props.showNotification('takePhoto-isPortrait')
           ctx.save();
           ctx.translate(canvas.width / 2, canvas.height / 2);
           ctx.rotate(90 * Math.PI / 180);
@@ -1009,11 +1010,18 @@ export function useScans(props: UseScansProps) {
           ctx.restore();
         }
       } else {
+        props.showNotification('takePhoto-landscape')
+
         // Already landscape
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         ctx?.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
       }
+
+
+      props.showNotification(`takePhoto-width-${canvas.width}-height-${ canvas.height }`)
+
+
       const dataUrl = canvas.toDataURL('image/jpeg');
       try {
         // Preprocess image for better OCR

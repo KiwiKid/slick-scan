@@ -459,7 +459,7 @@ const App = (): JSX.Element => {
             {/* Optionally, show a queue of scans being processed */}
             {scans.some(s => s.status === 'queued' || s.status === 'processing') && (
                 <div className="box mt-4">
-                    <h4 className="title is-6">Processing Queue</h4>
+                    <h4 className="title is-6">Processing Queue [{orientation} {videoRotation}]</h4>
                     {scans.filter(s => s.status === 'queued' || s.status === 'processing').map(scan => (
                         <div key={scan.id} className="mb-2">
                             <div className="columns is-mobile is-vcentered">
