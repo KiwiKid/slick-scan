@@ -831,7 +831,7 @@ const App = (): JSX.Element => {
                         )}
                         <details className="has-text-black">
                             <summary>Advanced</summary>
-                            [v0.1]
+                            [v0.2]
                             <div className="field mt-2">
                                 <p>This tools uses on device OCR to extract the data from the image. It does not send any data to third-parties or the cloud - export the data via the "Copy Scans" buttons.</p>
                             <label className="label">Scan Mode</label>

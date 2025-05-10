@@ -478,8 +478,8 @@ export function useScans(props: UseScansProps) {
   
         const serialized = JSON.stringify(scans);
         console.log('Serialized data size:', serialized.length);
-        localStorage.setItem('scanData', serialized);
-        console.log('Scans saved successfully');
+        //localStorage.setItem('scanData', serialized);
+        console.log('Scans saved (OFF))');
       } catch (error) {
         console.error('Error saving scans to localStorage:', {
           error,
@@ -861,7 +861,7 @@ export function useScans(props: UseScansProps) {
           // Show result on canvas and export
           cv.imshow(canvas, bin);
           // Clean up
-          src.delete(); src.delete(); gray.delete(); bin.delete();
+          src.delete(); gray.delete(); bin.delete();
           resolve(canvas.toDataURL('image/png'));
         };
         img.src = imageDataUrl;
