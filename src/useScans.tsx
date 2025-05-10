@@ -6,7 +6,7 @@ import { createWorker, PSM } from 'tesseract.js';
 import Webcam from 'react-webcam';
 
 
-let VERSION = "0.35"
+let VERSION = "0.36"
 
 interface FieldMatch {
   value: string;
@@ -866,7 +866,7 @@ export function useScans(props: UseScansProps) {
           ctx?.drawImage(img, 0, 0, img.width, img.height);
 
           // Add original image to debug
-          addDebugImage(canvas, 'perProcessImage - Original', `w:${canvas.width} h:${canvas.height}`);
+          addDebugImage(canvas, 'perProcessImage - Start', `w:${canvas.width} h:${canvas.height}`);
 
           let src = cv.imread(canvas);
           // Deskew the image
@@ -952,6 +952,7 @@ export function useScans(props: UseScansProps) {
     ctx?.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
   }
       const dataUrl = canvas.toDataURL('image/jpeg');
+
       await worker.setParameters({
         ...selectedMode.tesseractConfig
     });
@@ -959,7 +960,10 @@ export function useScans(props: UseScansProps) {
       const result = await worker.recognize(dataUrl);
       // Score: number of non-whitespace characters detected
       const text = result.data.text || '';
-      return text.replace(/\s/g, '').length;
+      const length =  text.replace(/\s/g, '').length;
+
+      addDebugImage(canvas, 'getORCScore - Result', `Score ${length}`);
+      return length
     }, [worker, selectedScanMode]);
 
     // Live OCR score polling effect
@@ -1018,12 +1022,11 @@ export function useScans(props: UseScansProps) {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
 
-
-      addDebugImage(canvas, 'takePhoto - Original', `w:${canvas.width} h:${canvas.height}`);
-
-    
-      // Use orientation to determine rotation
       const isPortrait = (typeof orientation === 'number' && (orientation === 90 || orientation === -90)) || window.innerHeight > window.innerWidth;
+
+      addDebugImage(canvas, `takePhoto - Original - ${isPortrait ? 'PreRotation' : ''}`, `w:${canvas.width} h:${canvas.height}`);
+
+      // Use orientation to determine rotation
 
       if (isPortrait) {
         // Rotate 90 degrees for portrait
@@ -1042,6 +1045,8 @@ export function useScans(props: UseScansProps) {
             video.videoHeight
           );
           ctx.restore();
+          addDebugImage(canvas, `takePhoto - Rotated - ${isPortrait ? 'PreRotation' : ''}`, `w:${canvas.width} h:${canvas.height}`);
+
         }
       } else {
         props.showNotification('takePhoto-landscape');
@@ -1051,7 +1056,7 @@ export function useScans(props: UseScansProps) {
         ctx?.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
       }
 
-      props.showNotification(`takePhoto-width-${canvas.width}-height-${ canvas.height }`);
+      props.showNotification(`takePhoto-PostRotation-width-${canvas.width}-height-${ canvas.height }`);
 
       const dataUrl = canvas.toDataURL('image/jpeg');
       try {
