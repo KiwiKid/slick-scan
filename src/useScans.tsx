@@ -6,7 +6,7 @@ import { createWorker, PSM } from 'tesseract.js';
 import Webcam from 'react-webcam';
 
 
-let VERSION = "0.30"
+let VERSION = "0.32"
 
 interface FieldMatch {
   value: string;
@@ -504,7 +504,7 @@ export function useScans(props: UseScansProps) {
               props?.showNotification('Failed to initialize OCR engine', 'danger');
           }
 
-          props.showNotification(`slick-scan ${VERSION}`)
+          props.showNotification(`v${VERSION}`)
       };
       void initWorker();
   }, []);
@@ -995,8 +995,8 @@ export function useScans(props: UseScansProps) {
       if (!videoRef.current) return;
       const video = videoRef.current.video;
       if (!video || !video.videoWidth || !video.videoHeight) return;
-      let canvas = document.createElement('canvas');
-      let ctx = canvas.getContext('2d');
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
     
       // Use orientation to determine rotation
       const isPortrait = (typeof orientation === 'number' && (orientation === 90 || orientation === -90)) || window.innerHeight > window.innerWidth;
@@ -1006,25 +1006,28 @@ export function useScans(props: UseScansProps) {
         canvas.width = video.videoHeight;
         canvas.height = video.videoWidth;
         if (ctx) {
-          props.showNotification('takePhoto-isPortrait-r')
+          props.showNotification('takePhoto-isPortrait-r');
           ctx.save();
           ctx.translate(canvas.width / 2, canvas.height / 2);
-          ctx.rotate(45 * Math.PI / 180);
-          ctx.drawImage(video, 0 - video.videoWidth / 2, 0 - video.videoHeight / 2, video.videoWidth, video.videoHeight);
+          ctx.rotate(90 * Math.PI / 180);
+          ctx.drawImage(
+            video,
+            -video.videoWidth / 2,
+            -video.videoHeight / 2,
+            video.videoWidth,
+            video.videoHeight
+          );
           ctx.restore();
         }
       } else {
-        props.showNotification('takePhoto-landscape')
-
+        props.showNotification('takePhoto-landscape');
         // Already landscape
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         ctx?.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
       }
 
-
-      props.showNotification(`takePhoto-width-${canvas.width}-height-${ canvas.height }`)
-
+      props.showNotification(`takePhoto-width-${canvas.width}-height-${ canvas.height }`);
 
       const dataUrl = canvas.toDataURL('image/jpeg');
       try {
