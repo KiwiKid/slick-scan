@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useQuery, QueryClient, QueryClientProvider } from 'react-query';
 import ReactDOM from 'react-dom/client';
 import { CONFIG, FieldMatches, LOCALE, Scan, useScans } from './useScans';
+import Webcam from "react-webcam";
 
 interface NotificationProps {
     message: string;
@@ -242,20 +243,18 @@ const App = (): JSX.Element => {
     }, []);
     const params = new URLSearchParams(window.location.search);
 
-    const videoRef = useRef<HTMLVideoElement | null>(null);
+    const webcamRef = useRef<Webcam | null>(null);
 
     const {
         scans, addScan, clearScans, clearScan, activeScanId, setActiveScanId, lockField, mergeFieldsToActiveScan, worker,
         clearAllScans, isProcessing, setSelectedScanMode, processImage, handleFileUpload, takePhoto, orcStrength, selectedScanMode
     } = useScans({
-        videoRef: videoRef,
+        videoRef: webcamRef,
         showNotification: showNotification,
         startSelectedScanMode: params.get('mode') || CONFIG.scanModes[0].id
     });
     const [notifications, setNotifications] = useState<Array<{ id: string; message: string; type: string }>>([]);
     const [isCameraActive, setIsCameraActive] = useState(query.data?.isCameraActive ?? false);
-    const streamRef = useRef<MediaStream | null>(null);
-    const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
 
     const [isDeleteMode, setIsDeleteMode] = useState(false);
 
@@ -377,30 +376,6 @@ const App = (): JSX.Element => {
 
 
 
-    const startCamera = useCallback(async () => {
-        try {
-            console.log('Starting camera...');
-            const stream = await navigator.mediaDevices.getUserMedia({ 
-                video: { 
-                    facingMode: 'environment',
-                    width: { ideal: 1280 },
-                    height: { ideal: 720 }
-                } 
-            });
-            console.log('Got stream:', stream);
-            setCameraStream(stream);
-            setIsCameraActive(true);
-
-
-            
-
-
-        } catch (error) {
-            console.error('Error accessing camera:', error);
-            showNotification('Failed to access camera', 'danger');
-        }
-    }, [showNotification]);
-
     const getORCClassName = (orcStrength: number):string => {
         if(orcStrength < 100){
             return 'is-primary';
@@ -411,68 +386,9 @@ const App = (): JSX.Element => {
         return 'is-success';
     }
 
-    useEffect(() => {
-        if (cameraStream && videoRef.current) {
-            console.log('Setting video source');
-            videoRef.current.srcObject = cameraStream;
-            videoRef.current.onloadedmetadata = () => {
-                console.log('Video metadata loaded');
-                videoRef.current?.play().catch(err => {
-                    console.error('Error playing video:', err);
-                });
-            };
-            streamRef.current = cameraStream;
-        }
-    }, [cameraStream]);
-
-    const stopCamera = useCallback(() => {
-        console.log('Stopping camera...');
-        if (streamRef.current) {
-            streamRef.current.getTracks().forEach(track => {
-                console.log('Stopping track:', track.kind);
-                track.stop();
-            });
-            streamRef.current = null;
-        }
-        if (videoRef.current) {
-            videoRef.current.srcObject = null;
-        }
-        setCameraStream(null);
-        setIsCameraActive(false);
-    }, []);
-
-    // Add effect to start camera when URL parameter changes
-    useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
-        const shouldBeActive = params.get('camera') === 'true';
-        
-        if (shouldBeActive && !isCameraActive) {
-            startCamera();
-        } else if (!shouldBeActive && isCameraActive) {
-            stopCamera();
-        }
-    }, [query.data?.isCameraActive]);
-
-    // Add effect to update URL when settings change
-    useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
-        if (isCameraActive) {
-            params.set('camera', 'true');
-        } else {
-            params.delete('camera');
-        }
-        if (selectedScanMode !== CONFIG.scanModes[0].id) {
-            params.set('mode', selectedScanMode);
-        } else {
-            params.delete('mode');
-        }
-        const newUrl = `${window.location.pathname}${params.toString() ? '?' + params.toString() : ''}`;
-        window.history.replaceState({}, '', newUrl);
-    }, [isCameraActive, selectedScanMode]);
-
     // Update video dimensions when metadata loads
     useEffect(() => {
-        const video = videoRef.current;
+        const video = webcamRef.current?.video;
         if (!video) return;
         const handleLoadedMetadata = () => {
             setVideoDimensions({ width: video.videoWidth, height: video.videoHeight });
@@ -483,7 +399,7 @@ const App = (): JSX.Element => {
             setVideoDimensions({ width: video.videoWidth, height: video.videoHeight });
         }
         return () => video.removeEventListener('loadedmetadata', handleLoadedMetadata);
-    }, [videoRef.current, cameraStream]);
+    }, [webcamRef.current]);
 
     // Device orientation
     useEffect(() => {
@@ -506,22 +422,22 @@ const App = (): JSX.Element => {
             <div>
             {isCameraActive && (
                 <div className="camera-container">
-                    <video
-                        ref={(el: HTMLVideoElement | null) => {
-                            if (el) {
-                                (videoRef as React.MutableRefObject<HTMLVideoElement | null>).current = el;
-                            }
+                    <Webcam
+                        ref={webcamRef}
+                        audio={false}
+                        screenshotFormat="image/jpeg"
+                        videoConstraints={{
+                            facingMode: "environment",
+                            width: { ideal: 1280 },
+                            height: { ideal: 720 }
                         }}
-                        autoPlay
-                        playsInline
-                        muted
                         style={{
-                            transform: videoRotation,
                             width: '100%',
                             height: '100%',
                             objectFit: 'cover',
                             background: 'black',
                         }}
+                        mirrored={false}
                     />
                     <div className="camera-overlay">
                         <div className="card-guide" />
@@ -532,7 +448,7 @@ const App = (): JSX.Element => {
                         <div className="has-text-centered is-flex is-justify-content-center">
                             <button
                                 className={`button ${getScanStrengthColor(orcStrength)} is-large camera-button image`}
-                                onClick={() => takePhoto(videoRef)}
+                                onClick={() => takePhoto(webcamRef)}
                             >
                                 Take Photo {orcStrength}
                             </button>
@@ -788,14 +704,14 @@ const App = (): JSX.Element => {
                         {!isCameraActive ? (
                             <button
                                 className="button is-info"
-                                onClick={startCamera}
+                                onClick={() => setIsCameraActive(true)}
                             >
                                 Open Camera
                             </button>
                         ) : (
                             <button
                                 className="button is-info"
-                                onClick={stopCamera}
+                                onClick={() => setIsCameraActive(false)}
                             >
                                 Close Camera
                             </button>

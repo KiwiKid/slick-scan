@@ -3,6 +3,7 @@ import cv, { Mat, MatVector, Point, Size } from 'opencv-ts';
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { createWorker, PSM } from 'tesseract.js';
+import Webcam from 'react-webcam';
 
 
 interface FieldMatch {
@@ -360,8 +361,8 @@ function validateDailyScans(data: unknown): data is DailyScans {
 
 type UseScansProps = {
   showNotification: (msg: string, type?: 'success' | 'warning' | 'danger' | 'info' | undefined) => void;
-  startSelectedScanMode: string | null
-  videoRef: React.RefObject<HTMLVideoElement> | null
+  startSelectedScanMode: string | null;
+  videoRef: React.RefObject<Webcam> | null;
 }
 export function useScans(props: UseScansProps) {
   const [selectedScanMode, setSelectedScanMode] = useState<string>(props.startSelectedScanMode ?? CONFIG.scanModes[0].id);
@@ -822,27 +823,28 @@ export function useScans(props: UseScansProps) {
 
           if(props.videoRef == null || props.videoRef.current == null) return
 
-          const videoWidth = props.videoRef.current.videoWidth;
-          const videoHeight = props.videoRef.current.videoHeight;
+          const video = props.videoRef.current.video;
+          if (!video || !video.videoWidth || !video.videoHeight) return;
+
           const canvas = document.createElement('canvas');
           const ctx = canvas.getContext('2d');
 
-          if (videoHeight > videoWidth) {
+          if (video.videoHeight > video.videoWidth) {
             // Portrait: rotate to landscape
-            canvas.width = videoHeight;
-            canvas.height = videoWidth;
+            canvas.width = video.videoHeight;
+            canvas.height = video.videoWidth;
             if (ctx) {
               ctx.save();
               ctx.translate(canvas.width / 2, canvas.height / 2);
               ctx.rotate(90 * Math.PI / 180);
-              ctx.drawImage(props.videoRef.current, 0 - videoWidth / 2, 0 - videoHeight / 2, videoWidth, videoHeight);
+              ctx.drawImage(video, 0 - video.videoWidth / 2, 0 - video.videoHeight / 2, video.videoWidth, video.videoHeight);
               ctx.restore();
             }
           } else {
             // Already landscape
-            canvas.width = videoWidth;
-            canvas.height = videoHeight;
-            ctx?.drawImage(props.videoRef.current, 0, 0, videoWidth, videoHeight);
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx?.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
           }
           let src = cv.imread(canvas);
           // Deskew the image
@@ -895,7 +897,7 @@ export function useScans(props: UseScansProps) {
     }, [addScanToQueue]);
 
     // Lightweight OCR score: count of recognized text characters
-    const getORCScore = React.useCallback(async (videoRef: React.RefObject<HTMLVideoElement>): Promise<number> => {
+    const getORCScore = React.useCallback(async (videoRef: React.RefObject<Webcam>): Promise<number> => {
       if (!videoRef || !videoRef.current) {
         return 0;
       }
@@ -904,26 +906,26 @@ export function useScans(props: UseScansProps) {
       }
       const selectedMode = CONFIG.scanModes.find(mode => mode.id === selectedScanMode);
       if (!selectedMode) throw new Error('Invalid scan mode selected');
-  const videoWidth = videoRef.current.videoWidth;
-  const videoHeight = videoRef.current.videoHeight;
+  const video = videoRef.current.video;
+  if (!video || !video.videoWidth || !video.videoHeight) return 0;
   let canvas = document.createElement('canvas');
   let ctx = canvas.getContext('2d');
-  if (videoHeight > videoWidth) {
+  if (video.videoHeight > video.videoWidth) {
     // Portrait: rotate to landscape
-    canvas.width = videoHeight;
-    canvas.height = videoWidth;
+    canvas.width = video.videoHeight;
+    canvas.height = video.videoWidth;
     if (ctx) {
       ctx.save();
       ctx.translate(canvas.width / 2, canvas.height / 2);
       ctx.rotate(90 * Math.PI / 180);
-      ctx.drawImage(videoRef.current, 0 - videoWidth / 2, 0 - videoHeight / 2, videoWidth, videoHeight);
+      ctx.drawImage(video, 0 - video.videoWidth / 2, 0 - video.videoHeight / 2, video.videoWidth, video.videoHeight);
       ctx.restore();
     }
   } else {
     // Already landscape
-    canvas.width = videoWidth;
-    canvas.height = videoHeight;
-    ctx?.drawImage(videoRef.current, 0, 0, videoWidth, videoHeight);
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx?.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
   }
       const dataUrl = canvas.toDataURL('image/jpeg');
       await worker.setParameters({
@@ -985,28 +987,28 @@ export function useScans(props: UseScansProps) {
     }, []);*/
 
     // Take photo from camera
-    const takePhoto = React.useCallback(async (videoRef: React.RefObject<HTMLVideoElement>)  => {
+    const takePhoto = React.useCallback(async (videoRef: React.RefObject<Webcam>)  => {
       if (!videoRef.current) return;
-      const videoWidth = videoRef.current.videoWidth;
-      const videoHeight = videoRef.current.videoHeight;
+      const video = videoRef.current.video;
+      if (!video || !video.videoWidth || !video.videoHeight) return;
       let canvas = document.createElement('canvas');
       let ctx = canvas.getContext('2d');
-     if (videoHeight > videoWidth) {
-        console.log(`[takePhoto] Vertical image detected ${videoHeight} ${videoWidth}`)
-        canvas.width = videoHeight;
-        canvas.height = videoWidth;
+     if (video.videoHeight > video.videoWidth) {
+        console.log(`[takePhoto] Vertical image detected ${video.videoHeight} ${video.videoWidth}`)
+        canvas.width = video.videoHeight;
+        canvas.height = video.videoWidth;
         if (ctx) {
           ctx.save();
           ctx.translate(canvas.width / 2, canvas.height / 2);
           ctx.rotate(90 * Math.PI / 180);
-          ctx.drawImage(videoRef.current, 0 - videoWidth / 2, 0 - videoHeight / 2, videoWidth, videoHeight);
+          ctx.drawImage(video, 0 - video.videoWidth / 2, 0 - video.videoHeight / 2, video.videoWidth, video.videoHeight);
           ctx.restore();
         }
       } else {
         // Already landscape
-        canvas.width = videoWidth;
-        canvas.height = videoHeight;
-        ctx?.drawImage(videoRef.current, 0, 0, videoWidth, videoHeight);
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx?.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
       }
       const dataUrl = canvas.toDataURL('image/jpeg');
       try {
