@@ -781,7 +781,7 @@ export function useScans(props: UseScansProps) {
         }
       }
 
-      let rotated = src.clone();
+      /*  let rotated = src.clone();
       if (maxContour) {
         // Get min area rect
         let rotatedRect = cv.minAreaRect(maxContour);
@@ -797,7 +797,7 @@ export function useScans(props: UseScansProps) {
         console.log('[deskewImage] RotatedRect width:', width, 'height:', height);
         console.log('[deskewImage] Original angle:', originalAngle);
         console.log('[deskewImage] Clamped angle:', angle);
-        if (Math.abs(angle) > 10) {
+      if (Math.abs(angle) > 10) {
           let center = new cv.Point(src.cols / 2, src.rows / 2);
           let M = cv.getRotationMatrix2D(center, angle, 1);
           cv.warpAffine(src, rotated, M, new cv.Size(src.cols, src.rows), cv.INTER_LINEAR, cv.BORDER_CONSTANT, new cv.Scalar());
@@ -808,10 +808,10 @@ export function useScans(props: UseScansProps) {
         }
       } else {
         console.log('[deskewImage] No suitable contour found for deskewing.');
-      }
+      }*/
 
       gray.delete(); bin.delete(); edges.delete(); closed.delete(); kernel.delete(); contours.delete(); hierarchy.delete();
-      return rotated;
+      return src;
     }
 
     // Preprocess image using OpenCV.js (opencv-ts): deskew + grayscale + adaptive threshold
