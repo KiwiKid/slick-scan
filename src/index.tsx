@@ -260,6 +260,7 @@ const App = (): JSX.Element => {
     const [isDeleteMode, setIsDeleteMode] = useState(false);
 
     const [orientation, setOrientation] = useState<number>(window.screen.orientation?.angle || window.orientation || 0);
+    const [videoDimensions, setVideoDimensions] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
 
     const handleClearScan = (id: string) => {
         if(!isDeleteMode){
@@ -469,6 +470,22 @@ const App = (): JSX.Element => {
         window.history.replaceState({}, '', newUrl);
     }, [isCameraActive, selectedScanMode]);
 
+    // Update video dimensions when metadata loads
+    useEffect(() => {
+        const video = videoRef.current;
+        if (!video) return;
+        const handleLoadedMetadata = () => {
+            setVideoDimensions({ width: video.videoWidth, height: video.videoHeight });
+        };
+        video.addEventListener('loadedmetadata', handleLoadedMetadata);
+        // If already loaded
+        if (video.readyState >= 1) {
+            setVideoDimensions({ width: video.videoWidth, height: video.videoHeight });
+        }
+        return () => video.removeEventListener('loadedmetadata', handleLoadedMetadata);
+    }, [videoRef.current, cameraStream]);
+
+    // Device orientation
     useEffect(() => {
         const handleOrientationChange = () => {
             setOrientation(window.screen.orientation?.angle || window.orientation || 0);
@@ -476,6 +493,13 @@ const App = (): JSX.Element => {
         window.addEventListener('orientationchange', handleOrientationChange);
         return () => window.removeEventListener('orientationchange', handleOrientationChange);
     }, []);
+
+    // Determine if device is portrait
+    const isDevicePortrait = window.innerHeight > window.innerWidth;
+    // Determine if video is landscape
+    const isVideoLandscape = videoDimensions.width > videoDimensions.height;
+    // Only rotate if device is portrait and video is landscape
+    const videoRotation = isDevicePortrait && isVideoLandscape ? 'rotate(90deg)' : 'none';
 
     return (
         
@@ -492,14 +516,7 @@ const App = (): JSX.Element => {
                         playsInline
                         muted
                         style={{
-                            transform:
-                                orientation === 90
-                                    ? 'rotate(90deg)'
-                                    : orientation === -90
-                                    ? 'rotate(-90deg)'
-                                    : orientation === 180
-                                    ? 'rotate(180deg)'
-                                    : 'rotate(0deg)',
+                            transform: videoRotation,
                             width: '100%',
                             height: '100%',
                             objectFit: 'cover',
@@ -814,6 +831,7 @@ const App = (): JSX.Element => {
                         )}
                         <details className="has-text-black">
                             <summary>Advanced</summary>
+                            [v0.1]
                             <div className="field mt-2">
                                 <p>This tools uses on device OCR to extract the data from the image. It does not send any data to third-parties or the cloud - export the data via the "Copy Scans" buttons.</p>
                             <label className="label">Scan Mode</label>
