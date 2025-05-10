@@ -259,6 +259,8 @@ const App = (): JSX.Element => {
 
     const [isDeleteMode, setIsDeleteMode] = useState(false);
 
+    const [orientation, setOrientation] = useState<number>(window.screen.orientation?.angle || window.orientation || 0);
+
     const handleClearScan = (id: string) => {
         if(!isDeleteMode){
             if(!window.confirm('Are you sure you want to delete this scan?')){
@@ -467,6 +469,14 @@ const App = (): JSX.Element => {
         window.history.replaceState({}, '', newUrl);
     }, [isCameraActive, selectedScanMode]);
 
+    useEffect(() => {
+        const handleOrientationChange = () => {
+            setOrientation(window.screen.orientation?.angle || window.orientation || 0);
+        };
+        window.addEventListener('orientationchange', handleOrientationChange);
+        return () => window.removeEventListener('orientationchange', handleOrientationChange);
+    }, []);
+
     return (
         
             <div>
@@ -481,6 +491,20 @@ const App = (): JSX.Element => {
                         autoPlay
                         playsInline
                         muted
+                        style={{
+                            transform:
+                                orientation === 90
+                                    ? 'rotate(90deg)'
+                                    : orientation === -90
+                                    ? 'rotate(-90deg)'
+                                    : orientation === 180
+                                    ? 'rotate(180deg)'
+                                    : 'rotate(0deg)',
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            background: 'black',
+                        }}
                     />
                     <div className="camera-overlay">
                         <div className="card-guide" />
