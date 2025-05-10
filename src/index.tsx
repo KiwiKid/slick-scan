@@ -694,7 +694,7 @@ const App = (): JSX.Element => {
                                 <div key={index} className="column is-12 mb-4 px-2">
                                     <h1 className="title is-6">{image.label}</h1>
                                     <h2 className="subtitle is-6">{image.subtitle}</h2>
-                                    <img src={image.dataUrl} alt={image.label} style={{ width: '100%', height: 'auto', maxHeight: '200px'' }} />
+                                    <img src={image.dataUrl} alt={image.label} style={{ width: '100%', height: 'auto', maxHeight: '200px', objectFit: 'contain' }} />
                                 </div>
                             ))}
                         </div>
