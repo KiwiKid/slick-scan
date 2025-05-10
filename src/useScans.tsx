@@ -989,9 +989,6 @@ export function useScans(props: UseScansProps) {
         canvas.height = videoHeight;
         ctx?.drawImage(videoRef.current, 0, 0, videoWidth, videoHeight);
       }
-        canvas.width = videoWidth;
-        canvas.height = videoHeight;
-        ctx?.drawImage(videoRef.current, 0, 0, videoWidth, videoHeight);
       const dataUrl = canvas.toDataURL('image/jpeg');
       try {
         // Preprocess image for better OCR
