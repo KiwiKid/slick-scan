@@ -221,6 +221,7 @@ function getScanStrengthColor(strength: number, min = 100, max = 300) {
 
 const App = (): JSX.Element => {
     const [debug, setDebug] = useState(false);
+    const [isMultiUploadMode, setIsMultiUploadMode] = useState(false);
     const query = useQuery({
         queryKey: ['appSettings'],
         queryFn: () => {
@@ -478,7 +479,7 @@ const App = (): JSX.Element => {
                     />
                 ))}
             </div>
-            {/* Bulma Table of Scans */}
+            
             <div className="table-container" style={{ marginTop: '2rem' }}>
                 <div className="is-hidden-mobile">
                     {scans.filter(s => s.status === 'completed').length > 0 && <table className="table is-striped is-fullwidth is-hoverable">
@@ -709,6 +710,48 @@ const App = (): JSX.Element => {
 
             
 
+            {/* Multi-upload overlay */}
+            {isMultiUploadMode && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    width: '100vw',
+                    height: '100vh',
+                    background: 'rgba(255,255,255,0.98)',
+                    zIndex: 2000,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '2rem',
+                }}>
+                    <h2 className="title is-5" style={{ textAlign: 'center' }}>Multi-Image Upload</h2>
+                    <p className="mb-4" style={{ textAlign: 'center' }}>Select multiple images to upload and scan. Large files may take longer to process.</p>
+                    <div className="file is-boxed is-large mb-4" style={{ width: '100%', maxWidth: 400 }}>
+                        <label className="file-label" style={{ width: '100%' }}>
+                            <input
+                                className="file-input"
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                style={{ height: '4rem', fontSize: '1.5rem' }}
+                                onChange={e => {
+                                    handleFileUpload(e, showNotification);
+                                    setIsMultiUploadMode(false);
+                                }}
+                            />
+                            <span className="file-cta" style={{ height: '4rem', fontSize: '1.25rem', width: '100%', justifyContent: 'center' }}>
+                                <span className="file-label">Choose Images</span>
+                            </span>
+                        </label>
+                    </div>
+                    <button className="button is-danger is-light" onClick={() => setIsMultiUploadMode(false)}>
+                        Cancel
+                    </button>
+                </div>
+            )}
+
             <div className="fixed-bottom-nav">
                 <div className="container">
                     <div className="buttons is-centered has-addons">
@@ -737,7 +780,7 @@ const App = (): JSX.Element => {
                                 Close Camera
                             </button>
                         )}
-                        {!isCameraActive && (
+                        {!isCameraActive && !isMultiUploadMode && (
                             <div className="file is-boxed">
                                 <label className="file-label">
                                     <input
@@ -753,6 +796,13 @@ const App = (): JSX.Element => {
                                 </label>
                             </div>
                         )}
+                        {/* Multi-upload toggle button */}
+                        <button
+                            className={`button is-${isMultiUploadMode ? 'warning' : 'info'}`}
+                            onClick={() => setIsMultiUploadMode(m => !m)}
+                        >
+                            {isMultiUploadMode ? 'Cancel Multi Upload' : 'Multi Upload'}
+                        </button>
                         {scans.filter(s => s.status === 'completed').length > 0 && (
                             <>
                                 <button
