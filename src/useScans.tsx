@@ -875,27 +875,32 @@ export function useScans(props: UseScansProps) {
       }
       const selectedMode = CONFIG.scanModes.find(mode => mode.id === selectedScanMode);
       if (!selectedMode) throw new Error('Invalid scan mode selected');
-      const videoWidth = videoRef.current.videoWidth;
-      const videoHeight = videoRef.current.videoHeight;
-      let canvas = document.createElement('canvas');
-      let ctx = canvas.getContext('2d');
-      if (videoHeight > videoWidth) {
-        // Portrait: rotate to landscape
-        canvas.width = videoHeight;
-        canvas.height = videoWidth;
-        if (ctx) {
-          ctx.save();
-          ctx.translate(canvas.width / 2, canvas.height / 2);
-          ctx.rotate(90 * Math.PI / 180);
-          ctx.drawImage(videoRef.current, 0 - videoWidth / 2, 0 - videoHeight / 2, videoWidth, videoHeight);
-          ctx.restore();
-        }
-      } else {
-        // Already landscape
-        canvas.width = videoWidth;
-        canvas.height = videoHeight;
-        ctx?.drawImage(videoRef.current, 0, 0, videoWidth, videoHeight);
-      }
+/*  const videoWidth = videoRef.current.videoWidth;
+  const videoHeight = videoRef.current.videoHeight;
+  let canvas = document.createElement('canvas');
+  let ctx = canvas.getContext('2d');
+  if (videoHeight > videoWidth) {
+    // Portrait: rotate to landscape
+    canvas.width = videoHeight;
+    canvas.height = videoWidth;
+    if (ctx) {
+      ctx.save();
+      ctx.translate(canvas.width / 2, canvas.height / 2);
+      ctx.rotate(90 * Math.PI / 180);
+      ctx.drawImage(videoRef.current, 0 - videoWidth / 2, 0 - videoHeight / 2, videoWidth, videoHeight);
+      ctx.restore();
+    }
+  } else {
+    // Already landscape
+    canvas.width = videoWidth;
+    canvas.height = videoHeight;
+    ctx?.drawImage(videoRef.current, 0, 0, videoWidth, videoHeight);
+  }*/
+      const canvas = document.createElement('canvas');
+      canvas.width = videoRef.current.videoWidth;
+      canvas.height = videoRef.current.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx?.drawImage(videoRef.current, 0, 0, videoRef.current.videoWidth, videoRef.current.videoHeight);
       const dataUrl = canvas.toDataURL('image/jpeg');
       await worker.setParameters({
         ...selectedMode.tesseractConfig
@@ -933,7 +938,7 @@ export function useScans(props: UseScansProps) {
       const videoHeight = videoRef.current.videoHeight;
       let canvas = document.createElement('canvas');
       let ctx = canvas.getContext('2d');
-      if (videoHeight > videoWidth) {
+     /*if (videoHeight > videoWidth) {
         // Portrait: rotate to landscape
         canvas.width = videoHeight;
         canvas.height = videoWidth;
@@ -949,7 +954,10 @@ export function useScans(props: UseScansProps) {
         canvas.width = videoWidth;
         canvas.height = videoHeight;
         ctx?.drawImage(videoRef.current, 0, 0, videoWidth, videoHeight);
-      }
+      }*/
+        canvas.width = videoWidth;
+        canvas.height = videoHeight;
+        ctx?.drawImage(videoRef.current, 0, 0, videoWidth, videoHeight);
       const dataUrl = canvas.toDataURL('image/jpeg');
       try {
         // Preprocess image for better OCR
