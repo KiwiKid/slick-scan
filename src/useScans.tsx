@@ -368,7 +368,7 @@ export function useScans(props: UseScansProps) {
 
   const [isProcessing, setIsProcessing] = React.useState(false);
   // Compress image utility
-  const compressImage = React.useCallback(async (dataUrl: string): Promise<string> => {
+  /*const compressImage = React.useCallback(async (dataUrl: string): Promise<string> => {
     return new Promise((resolve) => {
       const img = new window.Image();
       img.onload = () => {
@@ -393,7 +393,7 @@ export function useScans(props: UseScansProps) {
       };
       img.src = dataUrl;
     });
-  }, []);
+  }, []);*/
   const [worker, setWorker] = useState<TesseractWorker | null>(null);
 
   const [orcStrength, setOrcStrength] = useState(0);
@@ -875,13 +875,27 @@ export function useScans(props: UseScansProps) {
       }
       const selectedMode = CONFIG.scanModes.find(mode => mode.id === selectedScanMode);
       if (!selectedMode) throw new Error('Invalid scan mode selected');
-      const canvas = document.createElement('canvas');
       const videoWidth = videoRef.current.videoWidth;
       const videoHeight = videoRef.current.videoHeight;
-      canvas.width = videoWidth;
-      canvas.height = videoHeight;
-      const ctx = canvas.getContext('2d');
-      ctx?.drawImage(videoRef.current, 0, 0, videoWidth, videoHeight);
+      let canvas = document.createElement('canvas');
+      let ctx = canvas.getContext('2d');
+      if (videoHeight > videoWidth) {
+        // Portrait: rotate to landscape
+        canvas.width = videoHeight;
+        canvas.height = videoWidth;
+        if (ctx) {
+          ctx.save();
+          ctx.translate(canvas.width / 2, canvas.height / 2);
+          ctx.rotate(90 * Math.PI / 180);
+          ctx.drawImage(videoRef.current, 0 - videoWidth / 2, 0 - videoHeight / 2, videoWidth, videoHeight);
+          ctx.restore();
+        }
+      } else {
+        // Already landscape
+        canvas.width = videoWidth;
+        canvas.height = videoHeight;
+        ctx?.drawImage(videoRef.current, 0, 0, videoWidth, videoHeight);
+      }
       const dataUrl = canvas.toDataURL('image/jpeg');
       await worker.setParameters({
         ...selectedMode.tesseractConfig
@@ -915,14 +929,27 @@ export function useScans(props: UseScansProps) {
     // Take photo from camera
     const takePhoto = React.useCallback(async (videoRef: React.RefObject<HTMLVideoElement>)  => {
       if (!videoRef.current) return;
-      const canvas = document.createElement('canvas');
-      // Use the original video size for highest quality
       const videoWidth = videoRef.current.videoWidth;
       const videoHeight = videoRef.current.videoHeight;
-      canvas.width = videoWidth;
-      canvas.height = videoHeight;
-      const ctx = canvas.getContext('2d');
-      ctx?.drawImage(videoRef.current, 0, 0, videoWidth, videoHeight);
+      let canvas = document.createElement('canvas');
+      let ctx = canvas.getContext('2d');
+      if (videoHeight > videoWidth) {
+        // Portrait: rotate to landscape
+        canvas.width = videoHeight;
+        canvas.height = videoWidth;
+        if (ctx) {
+          ctx.save();
+          ctx.translate(canvas.width / 2, canvas.height / 2);
+          ctx.rotate(90 * Math.PI / 180);
+          ctx.drawImage(videoRef.current, 0 - videoWidth / 2, 0 - videoHeight / 2, videoWidth, videoHeight);
+          ctx.restore();
+        }
+      } else {
+        // Already landscape
+        canvas.width = videoWidth;
+        canvas.height = videoHeight;
+        ctx?.drawImage(videoRef.current, 0, 0, videoWidth, videoHeight);
+      }
       const dataUrl = canvas.toDataURL('image/jpeg');
       try {
         // Preprocess image for better OCR
@@ -936,6 +963,6 @@ export function useScans(props: UseScansProps) {
 
     return {
       worker, scans, addScan, clearScans, clearScan, activeScanId, setActiveScanId, lockField, mergeFieldsToActiveScan, orcStrength,
-       clearAllScans, isProcessing, compressImage, processImage, handleFileUpload, takePhoto, lockActivePhotoField, selectedScanMode, setSelectedScanMode
+       clearAllScans, isProcessing, processImage, handleFileUpload, takePhoto, lockActivePhotoField, selectedScanMode, setSelectedScanMode
     };
   }

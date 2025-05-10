@@ -69,7 +69,7 @@ describe('extractFields', () => {
     `;
 
     const result = extractFieldsV2(input);
-    expect(result.fields.id).toBe('12345678');
+    expect(result.matches.id).toBe('12345678');
   });
 
   it('should handle empty input', () => {
