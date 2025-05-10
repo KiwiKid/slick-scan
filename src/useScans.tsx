@@ -930,6 +930,35 @@ export function useScans(props: UseScansProps) {
         if (interval) clearInterval(interval);
       };
     }, [props.videoRef, getORCScore]);
+/*
+    const captureFrame = React.useCallback(async (videoRef: React.RefObject<HTMLVideoElement>):Promise<string | null>  => {
+      if (!canvas) return null;
+      const ctx:CanvasRenderingContext2D | null = canvas.getContext('2d');
+      if (!ctx) return null;
+
+      const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+      const isLandscape = window.innerWidth > window.innerHeight;
+
+      if (isLandscape) {
+        canvas.width = videoRef.current.videoWidth;
+        canvas.height = videoRef.current.videoHeight;
+        ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+      } else {
+        // rotate 90 degrees for portrait orientation
+        canvas.width = video.videoHeight;
+        canvas.height = video.videoWidth;
+        ctx.save();
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.rotate(Math.PI / 2);
+        ctx.drawImage(video, -video.videoWidth / 2, -video.videoHeight / 2);
+        ctx.restore();
+      }
+
+      return canvas.toDataURL("image/jpeg");
+    }, []);*/
 
     // Take photo from camera
     const takePhoto = React.useCallback(async (videoRef: React.RefObject<HTMLVideoElement>)  => {
