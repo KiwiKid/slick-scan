@@ -6,7 +6,7 @@ import { createWorker, PSM } from 'tesseract.js';
 import Webcam from 'react-webcam';
 
 
-let VERSION = "0.33"
+let VERSION = "0.34"
 
 interface FieldMatch {
   value: string;
@@ -819,6 +819,15 @@ export function useScans(props: UseScansProps) {
       return src;
     }
 
+    // Debug images state for intermediary canvas renderings
+    const [debugImages, setDebugImages] = React.useState<Array<{ label: string, dataUrl: string, subtitle?: string }>>([]);
+    const addDebugImage = React.useCallback((canvas: HTMLCanvasElement, label: string, subtitle?: string) => {
+      setDebugImages(prev => [
+        ...prev,
+        { label, dataUrl: canvas.toDataURL('image/png'), subtitle }
+      ]);
+    }, []);
+
     // Preprocess image using OpenCV.js (opencv-ts): deskew + grayscale + adaptive threshold
     async function preprocessImage(imageDataUrl: string): Promise<string> {
       return new Promise((resolve) => {
@@ -831,7 +840,7 @@ export function useScans(props: UseScansProps) {
           if (!video || !video.videoWidth || !video.videoHeight) return;
 
           const canvas = document.createElement('canvas');
-         // const ctx = canvas.getContext('2d');
+          // const ctx = canvas.getContext('2d');
 
           /*if (video.videoHeight > video.videoWidth) {
             // Portrait: rotate to landscape
@@ -850,6 +859,15 @@ export function useScans(props: UseScansProps) {
             canvas.height = video.videoHeight;
             ctx?.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
           }*/
+          // Draw the uploaded image onto the canvas
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, img.width, img.height);
+
+          // Add original image to debug
+          addDebugImage(canvas, 'perProcessImage - Original', `w:${canvas.width} h:${canvas.height}`);
+
           let src = cv.imread(canvas);
           // Deskew the image
          // let deskewed = deskewImage(src);
@@ -866,6 +884,8 @@ export function useScans(props: UseScansProps) {
           );
           // Show result on canvas and export
           cv.imshow(canvas, bin);
+          // Add thresholded image to debug
+          addDebugImage(canvas, 'preprocessImage -  Thresholded', `w:${canvas.width} h:${canvas.height}`);
           // Clean up
           src.delete(); gray.delete(); bin.delete();
           resolve(canvas.toDataURL('image/png'));
@@ -997,6 +1017,10 @@ export function useScans(props: UseScansProps) {
       if (!video || !video.videoWidth || !video.videoHeight) return;
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
+
+
+      addDebugImage(canvas, 'takePhoto - Original', `w:${canvas.width} h:${canvas.height}`);
+
     
       // Use orientation to determine rotation
       const isPortrait = (typeof orientation === 'number' && (orientation === 90 || orientation === -90)) || window.innerHeight > window.innerWidth;
@@ -1042,6 +1066,7 @@ export function useScans(props: UseScansProps) {
 
     return {
       worker, scans, addScan, clearScans, clearScan, activeScanId, setActiveScanId, lockField, mergeFieldsToActiveScan, orcStrength,
-       clearAllScans, isProcessing, processImage, handleFileUpload, takePhoto, lockActivePhotoField, selectedScanMode, setSelectedScanMode
+       clearAllScans, isProcessing, processImage, handleFileUpload, takePhoto, lockActivePhotoField, selectedScanMode, setSelectedScanMode,
+       debugImages, setDebugImages
     };
   }
