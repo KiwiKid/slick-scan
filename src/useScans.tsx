@@ -898,6 +898,7 @@ export function useScans(props: UseScansProps) {
         const poll = async () => {
           if (props.videoRef && props.videoRef.current) {
             const res = await getORCScore(props.videoRef);
+            console.log('[getORCScore] OCR score:', res);
             setOrcStrength(res);
           }
         };

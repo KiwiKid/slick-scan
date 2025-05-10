@@ -490,7 +490,7 @@ const App = (): JSX.Element => {
                     {isCameraActive && (
                         <div className="has-text-centered is-flex is-justify-content-center">
                             <button
-                                className={`button is-primary ${getORCClassName(orcStrength)} is-large camera-button image`}
+                                className={`button ${getScanStrengthColor(orcStrength)} is-large camera-button image`}
                                 onClick={() => takePhoto(videoRef)}
                             >
                                 Take Photo {orcStrength}
