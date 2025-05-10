@@ -448,7 +448,7 @@ const App = (): JSX.Element => {
                         <div className="has-text-centered is-flex is-justify-content-center">
                             <button
                                 className={`button ${getScanStrengthColor(orcStrength)} is-large camera-button image`}
-                                onClick={() => takePhoto(webcamRef)}
+                                onClick={() => takePhoto(webcamRef, orientation)}
                             >
                                 Take Photo {orcStrength}
                             </button>

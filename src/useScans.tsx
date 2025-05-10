@@ -987,14 +987,18 @@ export function useScans(props: UseScansProps) {
     }, []);*/
 
     // Take photo from camera
-    const takePhoto = React.useCallback(async (videoRef: React.RefObject<Webcam>)  => {
+    const takePhoto = React.useCallback(async (videoRef: React.RefObject<Webcam>, orientation?: number)  => {
       if (!videoRef.current) return;
       const video = videoRef.current.video;
       if (!video || !video.videoWidth || !video.videoHeight) return;
       let canvas = document.createElement('canvas');
       let ctx = canvas.getContext('2d');
-     if (video.videoHeight > video.videoWidth) {
-        console.log(`[takePhoto] Vertical image detected ${video.videoHeight} ${video.videoWidth}`)
+    
+      // Use orientation to determine rotation
+      const isPortrait = (typeof orientation === 'number' && (orientation === 90 || orientation === -90)) || window.innerHeight > window.innerWidth;
+
+      if (isPortrait) {
+        // Rotate 90 degrees for portrait
         canvas.width = video.videoHeight;
         canvas.height = video.videoWidth;
         if (ctx) {
