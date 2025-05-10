@@ -789,7 +789,7 @@ export function useScans(props: UseScansProps) {
         const width = rotatedRect.size.width;
         const height = rotatedRect.size.height;
         if (width < height) {
-     //     angle += 90;
+          angle += 90;
         }
         const originalAngle = angle;
         angle = Math.max(-30, Math.min(30, angle));
@@ -819,12 +819,31 @@ export function useScans(props: UseScansProps) {
       return new Promise((resolve) => {
         const img = new window.Image();
         img.onload = () => {
+
+          if(props.videoRef == null || props.videoRef.current == null) return
+
+          const videoWidth = props.videoRef.current.videoWidth;
+          const videoHeight = props.videoRef.current.videoHeight;
           const canvas = document.createElement('canvas');
-          canvas.width = img.width;
-          canvas.height = img.height;
           const ctx = canvas.getContext('2d');
-          ctx?.drawImage(img, 0, 0);
-          // Get image data from canvas
+
+          if (videoHeight > videoWidth) {
+            // Portrait: rotate to landscape
+            canvas.width = videoHeight;
+            canvas.height = videoWidth;
+            if (ctx) {
+              ctx.save();
+              ctx.translate(canvas.width / 2, canvas.height / 2);
+              ctx.rotate(90 * Math.PI / 180);
+              ctx.drawImage(props.videoRef.current, 0 - videoWidth / 2, 0 - videoHeight / 2, videoWidth, videoHeight);
+              ctx.restore();
+            }
+          } else {
+            // Already landscape
+            canvas.width = videoWidth;
+            canvas.height = videoHeight;
+            ctx?.drawImage(props.videoRef.current, 0, 0, videoWidth, videoHeight);
+          }
           let src = cv.imread(canvas);
           // Deskew the image
           let deskewed = deskewImage(src);
