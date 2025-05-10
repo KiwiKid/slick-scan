@@ -159,9 +159,6 @@ body {
     cursor: pointer;
 }
 
-.camera-button:hover {
-    background-color: #00c4a7;
-}
 
 .photo-item {
     margin-bottom: 1rem;

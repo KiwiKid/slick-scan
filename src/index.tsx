@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, version } from 'react';
 import { useQuery, QueryClient, QueryClientProvider } from 'react-query';
 import ReactDOM from 'react-dom/client';
 import { CONFIG, FieldMatches, LOCALE, Scan, useScans } from './useScans';
@@ -249,7 +249,7 @@ const App = (): JSX.Element => {
 
     const {
         scans, addScan, clearScans, clearScan, activeScanId, setActiveScanId, lockField, mergeFieldsToActiveScan, worker,
-        clearAllScans, isProcessing, setSelectedScanMode, processImage, handleFileUpload, takePhoto, orcStrength, selectedScanMode, debugImages
+        clearAllScans, isProcessing, setSelectedScanMode, processImage, handleFileUpload, takePhoto, orcStrength, selectedScanMode, debugImages, VERSION
     } = useScans({
         videoRef: webcamRef,
         showNotification: showNotification,
@@ -263,14 +263,18 @@ const App = (): JSX.Element => {
     const [orientation, setOrientation] = useState<number>(window.screen.orientation?.angle || window.orientation || 0);
     const [videoDimensions, setVideoDimensions] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
 
-    const handleClearScan = (id: string) => {
+    const handleClearScan = (scan: Scan) => {
+        const hasAnyFields = scan.fields.dor || scan.fields.name  || scan.fields.spousePartner || scan.fields.other || scan.fields.issue || scan.fields.valid
+
         if(!isDeleteMode){
-            if(!window.confirm('Are you sure you want to delete this scan?')){
-                return;
+            if(hasAnyFields){
+                if(!window.confirm('Are you sure you want to delete this scan?')){
+                    return;
+                }
             }
         }
         
-        clearScan(id);
+        clearScan(scan.id);
         showNotification('Scan cleared', 'success');
     }
 
@@ -340,7 +344,7 @@ const App = (): JSX.Element => {
                     <div className="mt-3 is-flex is-flex-direction-column is-align-items-center gap-3">
                         <button
                             className="button is-small is-danger"
-                            onClick={() => handleClearScan(scan.id)}
+                            onClick={() => handleClearScan(scan)}
                             
                             >
                             
@@ -687,11 +691,50 @@ const App = (): JSX.Element => {
                 </div>
                 <div className="py-6">
                 </div>
-                <button className="button is-info" onClick={() => {
+                <button className="button is-white" onClick={() => {
                     setDebug(!debug)
                 }}>
                     {debug ? 'Hide Debug' : 'Show Debug'}
                 </button>
+                <details className="has-text-black">
+                    <summary>Advanced</summary>
+                    {VERSION}
+                    <div className="field mt-2">
+                        <p>This tools uses on device OCR to extract the data from the image. It does not send any data to third-parties or the cloud - export the data via the "Copy Scans" buttons.</p>
+                    <label className="label">Scan Mode</label>
+                    <p className="text-sm i">(Configure the different 'modes' used to process the image)</p>
+                    <div className="control">
+                        <div className="select is-fullwidth">
+                            <select 
+                                value={selectedScanMode}
+                                onChange={(e) => setSelectedScanMode(e.target.value)}
+                            >
+                                {CONFIG.scanModes.map(mode => (
+                                    <option key={mode.id} value={mode.id}>
+                                        {mode.name} - {mode.description}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                    <button
+                        className="button is-danger"
+                        onClick={() => {
+                            const result = confirm('Are you sure you want to clear all scans?');
+                            if (result) {
+                                clearAllScans();
+                                showNotification('Cleared all scans', 'success');
+                            }
+                        }}
+                    >
+                        Clear Scans
+                    </button>
+                </details>
+                <div className="py-6">
+                </div>
+                <div className="py-6">
+                </div>
                 {debugImages && debug && (
                     <div className="py-6">
                         <div className="columns is-multiline is-gapless text-is-white">
@@ -774,12 +817,13 @@ const App = (): JSX.Element => {
                             </button>
                         ) : (
                             <button
-                                className="button is-info"
+                                className="button is-dark"
                                 onClick={() => setIsCameraActive(false)}
                             >
                                 Close Camera
                             </button>
                         )}
+                        {/*
                         {!isCameraActive && !isMultiUploadMode && (
                             <div className="file is-boxed">
                                 <label className="file-label">
@@ -796,7 +840,7 @@ const App = (): JSX.Element => {
                                 </label>
                             </div>
                         )}
-                        {/* Multi-upload toggle button */}
+                         Multi-upload toggle button */}
                         <button
                             className={`button is-${isMultiUploadMode ? 'warning' : 'info'}`}
                             onClick={() => setIsMultiUploadMode(m => !m)}
@@ -816,41 +860,7 @@ const App = (): JSX.Element => {
                                 </button>
                             </>
                         )}
-                        <details className="has-text-black">
-                            <summary>Advanced</summary>
-                            [v0.2]
-                            <div className="field mt-2">
-                                <p>This tools uses on device OCR to extract the data from the image. It does not send any data to third-parties or the cloud - export the data via the "Copy Scans" buttons.</p>
-                            <label className="label">Scan Mode</label>
-                            <p className="text-sm i">(Configure the different 'modes' used to process the image)</p>
-                            <div className="control">
-                                <div className="select is-fullwidth">
-                                    <select 
-                                        value={selectedScanMode}
-                                        onChange={(e) => setSelectedScanMode(e.target.value)}
-                                    >
-                                        {CONFIG.scanModes.map(mode => (
-                                            <option key={mode.id} value={mode.id}>
-                                                {mode.name} - {mode.description}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                            <button
-                                className="button is-danger"
-                                onClick={() => {
-                                    const result = confirm('Are you sure you want to clear all scans?');
-                                    if (result) {
-                                        clearAllScans();
-                                        showNotification('Cleared all scans', 'success');
-                                    }
-                                }}
-                            >
-                                Clear Scans
-                            </button>
-                        </details>
+                       
                     </div>
                     
                 </div>

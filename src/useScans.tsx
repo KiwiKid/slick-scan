@@ -1083,6 +1083,6 @@ export function useScans(props: UseScansProps) {
     return {
       worker, scans, addScan, clearScans, clearScan, activeScanId, setActiveScanId, lockField, mergeFieldsToActiveScan, orcStrength,
        clearAllScans, isProcessing, processImage, handleFileUpload, takePhoto, lockActivePhotoField, selectedScanMode, setSelectedScanMode,
-       debugImages, setDebugImages
+       debugImages, setDebugImages, VERSION
     };
   }
