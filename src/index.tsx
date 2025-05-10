@@ -220,6 +220,7 @@ function getScanStrengthColor(strength: number, min = 100, max = 300) {
 }
 
 const App = (): JSX.Element => {
+    const [debug, setDebug] = useState(false);
     const query = useQuery({
         queryKey: ['appSettings'],
         queryFn: () => {
@@ -679,7 +680,18 @@ const App = (): JSX.Element => {
                             ))}
                     </div>
                 </div>
-                {debugImages && (
+                <div className="py-6">
+                </div>
+                <div className="py-6">
+                </div>
+                <div className="py-6">
+                </div>
+                <button className="button is-info" onClick={() => {
+                    setDebug(!debug)
+                }}>
+                    {debug ? 'Hide Debug' : 'Show Debug'}
+                </button>
+                {debugImages && debug && (
                     <div className="py-6">
                         <div className="columns is-multiline is-gapless text-is-white">
                             {debugImages.map((image, index) => (
@@ -692,10 +704,7 @@ const App = (): JSX.Element => {
                         </div>
                     </div>
                 )}
-                <div className="py-6">
-                </div>
-                <div className="py-6">
-                </div>
+                
             </div>
 
             
