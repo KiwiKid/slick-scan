@@ -1002,10 +1002,10 @@ export function useScans(props: UseScansProps) {
         canvas.width = video.videoHeight;
         canvas.height = video.videoWidth;
         if (ctx) {
-          props.showNotification('takePhoto-isPortrait')
+          props.showNotification('takePhoto-isPortrait-r')
           ctx.save();
           ctx.translate(canvas.width / 2, canvas.height / 2);
-          ctx.rotate(90 * Math.PI / 180);
+          ctx.rotate(-90 * Math.PI / 180);
           ctx.drawImage(video, 0 - video.videoWidth / 2, 0 - video.videoHeight / 2, video.videoWidth, video.videoHeight);
           ctx.restore();
         }
