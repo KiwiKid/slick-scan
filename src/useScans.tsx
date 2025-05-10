@@ -322,9 +322,9 @@ export const CONFIG = {
     description: 'Best for detecting titles and values',
     tesseractConfig: {
       tessedit_pageseg_mode: PSM.AUTO,
-      tessedit_create_box: '1',
+     /*tessedit_create_box: '1',
       tessedit_create_unlv: '1',
-      tessedit_create_osd: '1',
+      tessedit_create_osd: '1',*/
     },
   }]
 } as const;
@@ -883,7 +883,9 @@ export function useScans(props: UseScansProps) {
       const ctx = canvas.getContext('2d');
       ctx?.drawImage(videoRef.current, 0, 0, videoWidth, videoHeight);
       const dataUrl = canvas.toDataURL('image/jpeg');
-      await worker.setParameters(selectedMode.tesseractConfig);
+      await worker.setParameters({
+        ...selectedMode.tesseractConfig
+    });
       // Use a lightweight Tesseract call (no layout, just text)
       const result = await worker.recognize(dataUrl);
       // Score: number of non-whitespace characters detected
