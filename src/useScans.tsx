@@ -368,7 +368,7 @@ export function useScans(props: UseScansProps) {
 
   const [isProcessing, setIsProcessing] = React.useState(false);
   // Compress image utility
-  /*const compressImage = React.useCallback(async (dataUrl: string): Promise<string> => {
+  const compressImage = React.useCallback(async (dataUrl: string): Promise<string> => {
     return new Promise((resolve) => {
       const img = new window.Image();
       img.onload = () => {
@@ -393,7 +393,7 @@ export function useScans(props: UseScansProps) {
       };
       img.src = dataUrl;
     });
-  }, []);*/
+  }, []);
   const [worker, setWorker] = useState<TesseractWorker | null>(null);
 
   const [orcStrength, setOrcStrength] = useState(0);
@@ -458,11 +458,21 @@ export function useScans(props: UseScansProps) {
         return []
       }
     });
+
+    const preSaveProcessing = async (scan: Scan):Promise<Scan> => {
+      return {
+        ...scan,
+        image: await compressImage(scan.image)
+      }
+    }
   
     React.useEffect(() => {
       try {
+
+        const scanToSave = Promise.all((scans.map(preSaveProcessing)))
+
         console.log('Saving scans to localStorage...', {
-          scans,
+          scans: scanToSave,
           totalScans: scans.length
         });
   
