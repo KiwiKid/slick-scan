@@ -6,7 +6,7 @@ import { createWorker, PSM } from 'tesseract.js';
 import Webcam from 'react-webcam';
 
 
-let VERSION = "0.47"
+let VERSION = "0.48"
 
 interface FieldMatch {
   value: string;
@@ -968,20 +968,27 @@ export function useScans(props: UseScansProps) {
 
     // Live OCR score polling effect
     useEffect(() => {
-      let interval: NodeJS.Timeout | null = null;
-      if (props.videoRef && props.videoRef.current) {
-        const poll = async () => {
-          if (props.videoRef && props.videoRef.current) {
+      let isPolling = false;
+      let stopped = false;
+      async function poll() {
+        if (stopped) return;
+        if (!isPolling && props.videoRef && props.videoRef.current) {
+          isPolling = true;
+          try {
             const res = await getORCScore(props.videoRef);
             console.log('[getORCScore] OCR score:', res);
             setOrcStrength(res);
+          } finally {
+            isPolling = false;
           }
-        };
-        poll(); // initial
-        interval = setInterval(poll, 1000); // poll every 1s
+        }
+        if (!stopped) {
+          setTimeout(poll, 1000); // poll every 1s, only after previous finishes
+        }
       }
+      poll(); // initial
       return () => {
-        if (interval) clearInterval(interval);
+        stopped = true;
       };
     }, [props.videoRef, getORCScore]);
 /*
