@@ -885,7 +885,7 @@ export function useScans(props: UseScansProps) {
       }
       const selectedMode = CONFIG.scanModes.find(mode => mode.id === selectedScanMode);
       if (!selectedMode) throw new Error('Invalid scan mode selected');
-/*  const videoWidth = videoRef.current.videoWidth;
+  const videoWidth = videoRef.current.videoWidth;
   const videoHeight = videoRef.current.videoHeight;
   let canvas = document.createElement('canvas');
   let ctx = canvas.getContext('2d');
@@ -905,12 +905,7 @@ export function useScans(props: UseScansProps) {
     canvas.width = videoWidth;
     canvas.height = videoHeight;
     ctx?.drawImage(videoRef.current, 0, 0, videoWidth, videoHeight);
-  }*/
-      const canvas = document.createElement('canvas');
-      canvas.width = videoRef.current.videoWidth;
-      canvas.height = videoRef.current.videoHeight;
-      const ctx = canvas.getContext('2d');
-      ctx?.drawImage(videoRef.current, 0, 0, videoRef.current.videoWidth, videoRef.current.videoHeight);
+  }
       const dataUrl = canvas.toDataURL('image/jpeg');
       await worker.setParameters({
         ...selectedMode.tesseractConfig
@@ -977,8 +972,8 @@ export function useScans(props: UseScansProps) {
       const videoHeight = videoRef.current.videoHeight;
       let canvas = document.createElement('canvas');
       let ctx = canvas.getContext('2d');
-     /*if (videoHeight > videoWidth) {
-        // Portrait: rotate to landscape
+     if (videoHeight > videoWidth) {
+        console.log(`[takePhoto] Vertical image detected ${videoHeight} ${videoWidth}`)
         canvas.width = videoHeight;
         canvas.height = videoWidth;
         if (ctx) {
@@ -993,7 +988,7 @@ export function useScans(props: UseScansProps) {
         canvas.width = videoWidth;
         canvas.height = videoHeight;
         ctx?.drawImage(videoRef.current, 0, 0, videoWidth, videoHeight);
-      }*/
+      }
         canvas.width = videoWidth;
         canvas.height = videoHeight;
         ctx?.drawImage(videoRef.current, 0, 0, videoWidth, videoHeight);
