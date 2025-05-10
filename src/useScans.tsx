@@ -6,7 +6,7 @@ import { createWorker, PSM } from 'tesseract.js';
 import Webcam from 'react-webcam';
 
 
-let VERSION = "0.42"
+let VERSION = "0.43"
 
 interface FieldMatch {
   value: string;
@@ -1028,7 +1028,7 @@ export function useScans(props: UseScansProps) {
 
       // Use orientation to determine rotation
 
-      const rotate = 90;
+      const rotate = 130;
       if (isPortrait) {
         // Rotate 90 degrees for portrait
         canvas.width = video.videoHeight;
