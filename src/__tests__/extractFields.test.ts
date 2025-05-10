@@ -1,5 +1,5 @@
 import { describe, it, expect } from '@jest/globals';
-import { extractFieldsV2 } from '../index.js';
+  import { extractFieldsV2 } from '../useScans.js';
 
 describe('extractFields', () => {
   it('should extract all fields from a valid licence text', () => {
