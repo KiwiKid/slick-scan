@@ -6,7 +6,7 @@ import { createWorker, PSM } from 'tesseract.js';
 import Webcam from 'react-webcam';
 
 
-let VERSION = "0.32"
+let VERSION = "0.33"
 
 interface FieldMatch {
   value: string;
@@ -533,9 +533,9 @@ export function useScans(props: UseScansProps) {
   
     const clearScan = React.useCallback((id: string) => {
       console.log('Clearing scan:', id);
-      
+        
       setScans(prev => {
-        return prev.filter((s) => s.id == id);
+        return prev.filter((s) => s.id !== id);
       });
     }, []);
   
@@ -831,9 +831,9 @@ export function useScans(props: UseScansProps) {
           if (!video || !video.videoWidth || !video.videoHeight) return;
 
           const canvas = document.createElement('canvas');
-          const ctx = canvas.getContext('2d');
+         // const ctx = canvas.getContext('2d');
 
-          if (video.videoHeight > video.videoWidth) {
+          /*if (video.videoHeight > video.videoWidth) {
             // Portrait: rotate to landscape
             canvas.width = video.videoHeight;
             canvas.height = video.videoWidth;
@@ -849,7 +849,7 @@ export function useScans(props: UseScansProps) {
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             ctx?.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
-          }
+          }*/
           let src = cv.imread(canvas);
           // Deskew the image
          // let deskewed = deskewImage(src);
