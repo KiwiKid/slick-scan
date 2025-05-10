@@ -422,17 +422,17 @@ const App = (): JSX.Element => {
             <div>
             {isCameraActive && (
                 <div style={{
-                    position: 'fixed',
                     top: 0,
                     left: 0,
-                    width: '100vw',
-                    height: '100vh',
+                    width: '100%',
+                    height: '1080px',
                     zIndex: 1,
                     background: 'black',
                 }}>
                     <Webcam
                         ref={webcamRef}
                         audio={false}
+                        height={'50%'}
                         screenshotFormat="image/jpeg"
                         videoConstraints={{
                             facingMode: "environment",
