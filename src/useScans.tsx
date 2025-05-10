@@ -403,7 +403,7 @@ export function useScans(props: UseScansProps) {
   const [scans, setScans] = React.useState<Array<Scan>>(() => {
     try {
       console.log('Initializing scans from localStorage...');
-      const raw = localStorage.getItem('scanData');
+      const raw = '' //localStorage.getItem('scanData');
       console.log('Raw data from localStorage:', raw ? 'Data exists' : 'No data found');
         
         if (!raw) {
@@ -443,13 +443,13 @@ export function useScans(props: UseScansProps) {
         });
   
         // If we cleaned up any scans, save the cleaned data
-        if (Object.keys(cleanedScans).length !== Object.keys(parsed).length) {
+       /* if (Object.keys(cleanedScans).length !== Object.keys(parsed).length) {
           console.log('Cleaned up old scans:', {
             before: Object.keys(parsed).length,
             after: Object.keys(cleanedScans).length
           });
-          localStorage.setItem('scanData', JSON.stringify(cleanedScans));
-        }
+         // localStorage.setItem('scanData', JSON.stringify(cleanedScans));
+        }*/
         
         return cleanedScans;
       } catch (error) {
@@ -528,7 +528,7 @@ export function useScans(props: UseScansProps) {
     const clearScans = React.useCallback(() => {
       console.log('Clearing all scans');
       setScans([]);
-      localStorage.removeItem('scanData');
+    //  localStorage.removeItem('scanData');
     }, []);
   
     const clearScan = React.useCallback((id: string) => {
@@ -613,7 +613,7 @@ export function useScans(props: UseScansProps) {
     // Clear all scans (queue and processed)
     const clearAllScans = React.useCallback(() => {
       setScans([]);
-      localStorage.removeItem('scanData');
+      //localStorage.removeItem('scanData');
     }, []);
 
     // Process image (OCR)
