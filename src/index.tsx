@@ -421,41 +421,33 @@ const App = (): JSX.Element => {
         
             <div>
             {isCameraActive && (
-                <div className="camera-container">
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    width: '100vw',
+                    height: '100vh',
+                    zIndex: 1,
+                    background: 'black',
+                }}>
                     <Webcam
                         ref={webcamRef}
                         audio={false}
                         screenshotFormat="image/jpeg"
                         videoConstraints={{
                             facingMode: "environment",
-                            width: { ideal: 1280 },
-                            height: { ideal: 720 }
+                            width: { ideal: 1920 },
+                            height: { ideal: 1080 }
                         }}
                         style={{
                             width: '100%',
                             height: '100%',
                             objectFit: 'cover',
-                            background: 'black',
                         }}
                         mirrored={false}
                     />
-                    <div className="camera-overlay">
-                        <div className="card-guide" />
-                    </div>
                 </div>
             )}
-                    {isCameraActive && (
-                        <div className="has-text-centered is-flex is-justify-content-center">
-                            <button
-                                className={`button ${getScanStrengthColor(orcStrength)} is-large camera-button image`}
-                                onClick={() => takePhoto(webcamRef, orientation)}
-                            >
-                                Take Photo {orcStrength}
-                            </button>
-                        </div>
-                        )}
-
-           
             {/* Optionally, show a queue of scans being processed */}
             {scans.some(s => s.status === 'queued' || s.status === 'processing') && (
                 <div className="box mt-4">
@@ -711,6 +703,16 @@ const App = (): JSX.Element => {
             <div className="fixed-bottom-nav">
                 <div className="container">
                     <div className="buttons is-centered has-addons">
+                    {isCameraActive && (
+                        <div className="has-text-centered is-flex is-justify-content-center">
+                            <button
+                                className={`button ${getScanStrengthColor(orcStrength)} is-large camera-button image`}
+                                onClick={() => takePhoto(webcamRef, orientation)}
+                            >
+                                Take Photo {orcStrength}
+                            </button>
+                        </div>
+                        )}
                         {!isCameraActive ? (
                             <button
                                 className="button is-info"
