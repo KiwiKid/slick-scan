@@ -6,7 +6,7 @@ import { createWorker, PSM } from 'tesseract.js';
 import Webcam from 'react-webcam';
 
 
-let VERSION = "0.3"
+let VERSION = "0.30"
 
 interface FieldMatch {
   value: string;
