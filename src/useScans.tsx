@@ -789,7 +789,7 @@ export function useScans(props: UseScansProps) {
         const width = rotatedRect.size.width;
         const height = rotatedRect.size.height;
         if (width < height) {
-          angle += 90;
+          angle -= 90;
         }
         const originalAngle = angle;
         angle = Math.max(-30, Math.min(30, angle));
