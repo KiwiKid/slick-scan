@@ -39767,18 +39767,9 @@ const App = () => {
         isCameraActive && (React.createElement("div", null,
             React.createElement(Webcam, { ref: webcamRef, audio: false, 
                 // height={'50%'}
-                screenshotFormat: "image/jpeg", 
-                /*videoConstraints={{
-                    facingMode: "environment",
-                    width: { ideal: 1920 },
-                    height: { ideal: 1080 }
-                }}
-                style={{
-                    width: '100%',
-                    height: '100%',
-                   objectFit: 'cover',
-                }}*/
-                mirrored: false }))),
+                screenshotFormat: "image/jpeg", videoConstraints: {
+                    facingMode: "environment"
+                }, mirrored: false }))),
         scans.some(s => s.status === 'queued' || s.status === 'processing') && (React.createElement("div", { className: "box mt-4" },
             React.createElement("h4", { className: "title is-6" },
                 "Processing Queue [",

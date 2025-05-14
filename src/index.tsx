@@ -441,11 +441,9 @@ const App = (): JSX.Element => {
                         audio={false}
                        // height={'50%'}
                         screenshotFormat="image/jpeg"
-                        /*videoConstraints={{
-                            facingMode: "environment",
-                            width: { ideal: 1920 },
-                            height: { ideal: 1080 }
-                        }}
+                        videoConstraints={{
+                            facingMode: "environment"
+                        }}/*
                         style={{
                             width: '100%',
                             height: '100%',
