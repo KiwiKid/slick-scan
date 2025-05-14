@@ -248,8 +248,8 @@ const App = (): JSX.Element => {
     const webcamRef = useRef<Webcam | null>(null);
 
     const {
-        scans, addScan, clearScans, clearScan, activeScanId, setActiveScanId, lockField, mergeFieldsToActiveScan, worker,
-        clearAllScans, isProcessing, setSelectedScanMode, processImage, handleFileUpload, takePhoto, orcStrength, selectedScanMode, debugImages, VERSION
+        scans, clearScan,
+        clearAllScans, setSelectedScanMode, handleFileUpload, takePhoto, orcStrength, selectedScanMode, debugImages, VERSION
     } = useScans({
         videoRef: webcamRef,
         showNotification: showNotification,
@@ -427,20 +427,21 @@ const App = (): JSX.Element => {
         
             <div>
             {isCameraActive && (
-                <div style={{
+                <div
+                /* style={{
                     top: 0,
                     left: 0,
                     width: '100%',
                     height: '60vh',
                     zIndex: 1,
                     background: 'black',
-                }}>
+                }}*/>
                     <Webcam
                         ref={webcamRef}
                         audio={false}
-                        height={'50%'}
+                       // height={'50%'}
                         screenshotFormat="image/jpeg"
-                        videoConstraints={{
+                        /*videoConstraints={{
                             facingMode: "environment",
                             width: { ideal: 1920 },
                             height: { ideal: 1080 }
@@ -449,7 +450,7 @@ const App = (): JSX.Element => {
                             width: '100%',
                             height: '100%',
                            objectFit: 'cover',
-                        }}
+                        }}*/
                         mirrored={false}
                     />
                 </div>
@@ -498,7 +499,7 @@ const App = (): JSX.Element => {
                             {scans.filter(s => s.status === 'completed').map(scan => (
                                     <tr key={scan.id}>
                                         <td>
-                                            <a style={{width: '5rem', height: '3rem'}} href={scan.image} target="_blank" rel="noopener noreferrer">
+                                            <a href={scan.image} target="_blank" rel="noopener noreferrer">
                                                 <img src={scan.image} alt="Scanned" />
                                             </a>
                                         </td>
@@ -594,7 +595,7 @@ const App = (): JSX.Element => {
                                         <div className="columns is-mobile is-multiline is-gapless">
                                             <div className="column is-12 mb-2">
                                                 <a href={scan.image} target="_blank" rel="noopener noreferrer">
-                                                    <img src={scan.image} alt="Scanned" style={{ width: '100%', height: 'auto', maxHeight: '200px', objectFit: 'contain' }} />
+                                                    <img src={scan.image} alt="Scanned"  />
                                                 </a>
                                             </div>
                                             <div className="column is-12">

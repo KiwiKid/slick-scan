@@ -378,12 +378,12 @@ export function useScans(props: UseScansProps) {
         const canvas = document.createElement('canvas');
         let width = img.width;
         let height = img.height;
-        if (width > CONFIG.image.compressedWidth) {
+      /*  if (width > CONFIG.image.compressedWidth) {
           height = (CONFIG.image.compressedWidth * height) / width;
           width = CONFIG.image.compressedWidth;
         }
         canvas.width = width;
-        canvas.height = height;
+        canvas.height = height;*/
         const ctx = canvas.getContext('2d');
         ctx?.drawImage(img, 0, 0, width, height);
         const compressedData = canvas.toDataURL('image/jpeg', CONFIG.image.jpegQuality);
@@ -934,9 +934,9 @@ export function useScans(props: UseScansProps) {
   if (!video || !video.videoWidth || !video.videoHeight) return 0;
   let canvas = document.createElement('canvas');
   let ctx = canvas.getContext('2d');
-  if (video.videoHeight > video.videoWidth) {
+//  if (video.videoHeight > video.videoWidth) {
     // Portrait: rotate to landscape
-    canvas.width = video.videoHeight;
+   /* canvas.width = video.videoHeight;
     canvas.height = video.videoWidth;
     if (ctx) {
       ctx.save();
@@ -950,7 +950,10 @@ export function useScans(props: UseScansProps) {
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     ctx?.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
-  }
+  }*/
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx?.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
       const dataUrl = canvas.toDataURL('image/jpeg');
 
       await worker.setParameters({
@@ -1035,7 +1038,7 @@ export function useScans(props: UseScansProps) {
 
       // Use orientation to determine rotation
 
-      const rotate = 0;
+    /*  const rotate = 0;
       if (isPortrait) {
         // Rotate 90 degrees for portrait
         canvas.width = video.videoHeight;
@@ -1065,8 +1068,10 @@ export function useScans(props: UseScansProps) {
           ctx?.rotate(-rotate * Math.PI / 180);
           ctx?.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
         }
-      }
-
+      }*/
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx?.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
       props.showNotification(`takePhoto-PostRotation-width-${canvas.width}-height-${ canvas.height }`);
 
       const dataUrl = canvas.toDataURL('image/jpeg');

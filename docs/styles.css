@@ -86,7 +86,7 @@ body {
     white-space: pre-wrap;
     word-break: break-word;
 }
-
+/*
 .camera-preview {
     position: fixed;
     top: 50%;
@@ -103,7 +103,7 @@ body {
     border-radius: 4px;
     box-shadow: 0 2px 3px rgba(255, 255, 255, 0.1);
     color: #000000;
-}
+}*/
 
 .camera-feed {
     width: 100%;
